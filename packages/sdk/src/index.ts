@@ -1,7 +1,2 @@
-export class NFDClient {
-  constructor() {
-    // Initialize client
-  }
-
-  // Future methods will be added here
-}
+export { NfdClient, type NfdClientConfig } from './client'
+export type { Nfd, ResolveOptions, ReverseLookupOptions } from './types'
