@@ -21,7 +21,8 @@
     "fetch:arc56": "tsx scripts/fetch-arc56.ts",
     "fetch:specs": "pnpm fetch:openapi && pnpm fetch:arc56",
     "generate:clients": "algokit generate client src/contracts/ --language typescript --output src/contracts/{contract_name}Client.ts",
-    "generate": "pnpm fetch:specs && pnpm generate:clients"
+    "generate:openapi": "openapi-ts",
+    "generate": "pnpm fetch:specs && pnpm generate:clients && pnpm generate:openapi"
   },
   "keywords": [
     "algorand",
@@ -46,6 +47,7 @@
   },
   "devDependencies": {
     "@algorandfoundation/algokit-client-generator": "^4.0.8",
+    "@hey-api/openapi-ts": "^0.64.5",
     "@tanstack/config": "^0.16.2",
     "@types/node-fetch": "^2.6.12",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
@@ -76,6 +78,7 @@
   },
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^8.2.1",
+    "@hey-api/client-fetch": "^0.8.1",
     "algosdk": "^3.2.0"
   }
 }
