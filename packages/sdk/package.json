@@ -1,0 +1,71 @@
+{
+  "name": "@txnlab/nfd-sdk",
+  "version": "0.1.0",
+  "description": "SDK for interacting with NFDomains (NFD) API and Algorand blockchain",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "jest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "prepare": "pnpm run build",
+    "publish:package": "node scripts/publish.js"
+  },
+  "keywords": [
+    "algorand",
+    "nfd",
+    "nfdomains",
+    "blockchain",
+    "domains",
+    "sdk"
+  ],
+  "author": "TxnLab Inc.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TxnLab/nfd-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TxnLab/nfd-sdk/issues"
+  },
+  "homepage": "https://github.com/TxnLab/nfd-sdk#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@tanstack/config": "^0.16.2",
+    "@types/node-fetch": "^2.6.12",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.20.1",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-import-x": "^4.6.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-plugin-unicorn": "^57.0.0",
+    "node-fetch": "^3.3.2",
+    "prettier": "^3.5.1",
+    "tsup": "^8.3.6",
+    "tsx": "^4.19.3"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  }
+}

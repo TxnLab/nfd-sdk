@@ -1,0 +1,36 @@
+{
+	"name": "@txnlab/nfd-sdk-monorepo",
+	"private": true,
+	"description": "Monorepo for NFDomains SDK and related packages",
+	"type": "module",
+	"scripts": {
+		"build": "pnpm -r build",
+		"test": "pnpm -r test",
+		"lint": "pnpm -r lint",
+		"format": "pnpm -r format",
+		"clean": "pnpm -r clean",
+		"publish:packages": "pnpm -r publish:package"
+	},
+	"keywords": [
+		"algorand",
+		"nfd",
+		"nfdomains",
+		"blockchain",
+		"domains",
+		"sdk"
+	],
+	"author": "TxnLab Inc.",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/TxnLab/nfd-sdk.git"
+	},
+	"bugs": {
+		"url": "https://github.com/TxnLab/nfd-sdk/issues"
+	},
+	"homepage": "https://github.com/TxnLab/nfd-sdk#readme",
+	"engines": {
+		"node": ">=18",
+		"pnpm": ">=8"
+	}
+}

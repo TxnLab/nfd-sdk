@@ -1,0 +1,7 @@
+packages:
+  # Core SDK package
+  - 'packages/sdk'
+  # Future related packages or variants
+  - 'packages/*'
+  # Internal shared packages (if needed)
+  - 'internal/*'
