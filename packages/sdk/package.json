@@ -17,7 +17,11 @@
     "format": "prettier --write .",
     "prepare": "pnpm run build",
     "publish:package": "node scripts/publish.js",
-    "fetch:openapi": "tsx scripts/fetch-openapi.ts"
+    "fetch:openapi": "tsx scripts/fetch-openapi.ts",
+    "fetch:arc56": "tsx scripts/fetch-arc56.ts",
+    "fetch:specs": "pnpm fetch:openapi && pnpm fetch:arc56",
+    "generate:clients": "algokit generate client src/contracts/ --language typescript --output src/contracts/{contract_name}Client.ts",
+    "generate": "pnpm fetch:specs && pnpm generate:clients"
   },
   "keywords": [
     "algorand",
@@ -41,6 +45,7 @@
     "access": "public"
   },
   "devDependencies": {
+    "@algorandfoundation/algokit-client-generator": "^4.0.8",
     "@tanstack/config": "^0.16.2",
     "@types/node-fetch": "^2.6.12",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
@@ -68,5 +73,9 @@
       }
     },
     "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@algorandfoundation/algokit-utils": "^8.2.1",
+    "algosdk": "^3.2.0"
   }
 }

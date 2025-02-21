@@ -33,5 +33,6 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# OpenAPI spec
-!src/openapi3.yaml 
+# Include spec files
+!src/openapi3.yaml
+!src/contracts/*.arc56.json
