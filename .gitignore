@@ -32,3 +32,6 @@ coverage/
 # Misc
 .DS_Store
 Thumbs.db
+
+# OpenAPI spec
+!src/openapi3.yaml 

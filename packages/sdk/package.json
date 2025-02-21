@@ -16,7 +16,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "prepare": "pnpm run build",
-    "publish:package": "node scripts/publish.js"
+    "publish:package": "node scripts/publish.js",
+    "fetch:openapi": "tsx scripts/fetch-openapi.ts"
   },
   "keywords": [
     "algorand",

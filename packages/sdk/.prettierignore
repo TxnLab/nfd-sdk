@@ -9,6 +9,7 @@ build
 
 # Generated files
 pnpm-lock.yaml
+src/openapi3.yaml
 
 # Coverage reports
 coverage
