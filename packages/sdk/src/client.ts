@@ -13,14 +13,12 @@ import type {
   SearchOptions,
 } from './types'
 import type { AppState } from '@algorandfoundation/algokit-utils/types/app'
-import type { TransactionSigner } from 'algosdk'
 
-/** The app ID of the NFD registry on MainNet */
-export const MAINNET_REGISTRY_APP_ID = 760937186n
-
-/** The fee sink address used for signing simulate calls */
-export const FEE_SINK =
-  'Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA'
+/** The NFD registry app IDs for each network */
+export enum NfdRegistryId {
+  MAINNET = 760937186,
+  TESTNET = 84366825,
+}
 
 /** Configuration options for the NFD client */
 export interface NfdClientConfig {
@@ -31,38 +29,58 @@ export interface NfdClientConfig {
   /**
    * The application ID of the NFD registry
    */
-  registryId?: bigint
+  registryId?: number | bigint
 }
 
 /**
  * Client for interacting with NFDs (Non-Fungible Domains) through both the API and smart contracts
  */
 export class NfdClient {
-  private readonly algorand: AlgorandClient
-  private readonly registryId: bigint
+  private readonly _algorand: AlgorandClient
+  private readonly _registryId: bigint
 
   constructor(config: NfdClientConfig = {}) {
-    this.algorand = config.algorand ?? AlgorandClient.mainNet()
-    this.registryId = config.registryId ?? MAINNET_REGISTRY_APP_ID
+    this._algorand = config.algorand ?? AlgorandClient.mainNet()
+    this._registryId =
+      typeof config.registryId === 'number'
+        ? BigInt(config.registryId)
+        : (config.registryId ?? BigInt(NfdRegistryId.MAINNET))
+  }
+
+  /**
+   * Create a new NfdClient instance configured for MainNet
+   * @returns A new NfdClient instance
+   */
+  static mainNet(): NfdClient {
+    return new NfdClient({
+      algorand: AlgorandClient.mainNet(),
+      registryId: NfdRegistryId.MAINNET,
+    })
+  }
+
+  /**
+   * Create a new NfdClient instance configured for TestNet
+   * @returns A new NfdClient instance
+   */
+  static testNet(): NfdClient {
+    return new NfdClient({
+      algorand: AlgorandClient.testNet(),
+      registryId: NfdRegistryId.TESTNET,
+    })
   }
 
   /**
    * Get a registry client
    * @internal
-   * @param senderAddr - Optional sender address, defaults to fee sink
-   * @param signer - Optional transaction signer
+   * @param defaultSender - Optional default sender address
    * @returns The NFD registry client
    */
   private getRegistryClient(
-    senderAddr: string = FEE_SINK,
-    signer?: TransactionSigner,
+    defaultSender?: string | Address,
   ): NfdRegistryClient {
-    if (signer) {
-      this.algorand.setSigner(senderAddr, signer)
-    }
-    return this.algorand.client.getTypedAppClientById(NfdRegistryClient, {
-      appId: this.registryId,
-      defaultSender: senderAddr,
+    return this._algorand.client.getTypedAppClientById(NfdRegistryClient, {
+      appId: this._registryId,
+      defaultSender,
     })
   }
 
@@ -70,21 +88,16 @@ export class NfdClient {
    * Get an NFD instance client
    * @internal
    * @param nfdAppId - The NFD's application ID
-   * @param senderAddr - Optional sender address, defaults to fee sink
-   * @param signer - Optional transaction signer
+   * @param defaultSender - Optional default sender address
    * @returns The NFD instance client
    */
   private getInstanceClient(
     nfdAppId: bigint,
-    senderAddr: string = FEE_SINK,
-    signer?: TransactionSigner,
+    defaultSender?: string | Address,
   ): NfdInstanceClient {
-    if (signer) {
-      this.algorand.setSigner(senderAddr, signer)
-    }
-    return this.algorand.client.getTypedAppClientById(NfdInstanceClient, {
+    return this._algorand.client.getTypedAppClientById(NfdInstanceClient, {
       appId: nfdAppId,
-      defaultSender: senderAddr,
+      defaultSender,
     })
   }
 
