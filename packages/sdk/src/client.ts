@@ -129,7 +129,17 @@ export class NfdClient {
   private async getAppIdFromName(name: string): Promise<bigint> {
     const registryClient = this.getRegistryClient()
     const boxName = this.getRegistryBoxNameForNFD(name)
-    const appIdBytes = await registryClient.appClient.getBoxValue(boxName)
+    let appIdBytes: Uint8Array | undefined
+    try {
+      appIdBytes = await registryClient.appClient.getBoxValue(boxName)
+    } catch (error) {
+      // Check if error is a 404 response
+      if (error instanceof Error && error.message.includes('404')) {
+        throw new Error(`NFD not found: ${name}`)
+      }
+      // Re-throw other errors
+      throw error
+    }
     if (!appIdBytes) {
       throw new Error(`NFD not found: ${name}`)
     }
