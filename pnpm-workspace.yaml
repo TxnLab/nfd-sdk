@@ -5,3 +5,5 @@ packages:
   - 'packages/*'
   # Internal shared packages (if needed)
   - 'internal/*'
+  # Examples
+  - 'examples/*'

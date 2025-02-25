@@ -15,7 +15,6 @@
     "test": "jest",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "prepare": "pnpm run build",
     "publish:package": "node scripts/publish.js",
     "fetch:openapi": "tsx scripts/fetch-openapi.ts",
     "fetch:arc56": "tsx scripts/fetch-arc56.ts",
@@ -49,6 +48,7 @@
     "@algorandfoundation/algokit-client-generator": "^4.0.8",
     "@hey-api/openapi-ts": "^0.64.5",
     "@tanstack/config": "^0.16.2",
+    "@types/crypto-js": "^4.2.2",
     "@types/node-fetch": "^2.6.12",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
     "@typescript-eslint/parser": "^8.24.1",
@@ -61,13 +61,14 @@
     "node-fetch": "^3.3.2",
     "prettier": "^3.5.1",
     "tsup": "^8.3.6",
-    "tsx": "^4.19.3"
+    "tsx": "^4.19.3",
+    "typescript": "^5.5.3"
   },
   "exports": {
     ".": {
       "import": {
         "types": "./dist/index.d.ts",
-        "default": "./dist/index.mjs"
+        "default": "./dist/index.js"
       },
       "require": {
         "types": "./dist/index.d.cts",
@@ -79,6 +80,7 @@
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^8.2.1",
     "@hey-api/client-fetch": "^0.8.1",
-    "algosdk": "^3.2.0"
+    "algosdk": "^3.2.0",
+    "crypto-js": "^4.2.0"
   }
 }
