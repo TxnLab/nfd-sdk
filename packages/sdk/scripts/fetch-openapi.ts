@@ -15,7 +15,7 @@ config({ path: packageEnv })
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN
 const SPEC_URL =
   'https://raw.githubusercontent.com/TxnLab/nfd-backend/main/goasvcs/pubapi/gen/http/openapi3.yaml'
-const OUTPUT_PATH = resolve(__dirname, '../src/openapi3.yaml')
+const OUTPUT_PATH = resolve(__dirname, '../src/api/openapi3.yaml')
 
 async function fetchOpenApiSpec() {
   if (!GITHUB_TOKEN) {
