@@ -7,6 +7,7 @@ import { resolveFromApi, reverseLookupFromApi, searchFromApi } from './api'
 import { NfdInstanceClient } from './contracts/NFDInstanceClient'
 import { NfdRegistryClient } from './contracts/NFDRegistryClient'
 
+import type { Constraints } from './contracts/NFDRegistryClient'
 import type {
   Nfd,
   ResolveOptions,
@@ -642,6 +643,39 @@ export class NfdClient {
   }
 
   /**
+   * Get the protocol constraints from the NFD registry
+   * @returns The protocol constraints
+   * @throws If an error occurs while fetching the constraints
+   * @internal
+   */
+  private async getConstraints(): Promise<Constraints> {
+    const registryClient = this.getRegistryClient()
+
+    try {
+      const result = await registryClient.newGroup().getConstraints().simulate({
+        skipSignatures: true,
+        allowUnnamedResources: true,
+      })
+
+      if (!result.returns) {
+        throw new Error('No data returned')
+      }
+
+      const constraints = result.returns[0]
+
+      if (!constraints) {
+        throw new Error('No constraints returned')
+      }
+
+      return constraints
+    } catch (error) {
+      throw new Error(
+        `Failed to get protocol constraints: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  /**
    * Mint a new NFD
    * @param nfdName - The name of the NFD to mint
    * @param params - Configuration options for minting
@@ -665,6 +699,35 @@ export class NfdClient {
     }
 
     const { buyer: buyerAddr, years: numYears } = params
+
+    // Validate years parameter against protocol constraints
+    try {
+      const constraints = await this.getConstraints()
+      const maxYearsAllowed = Number(constraints.maxYearsAllowed)
+
+      if (numYears <= 0) {
+        throw new Error('Years must be greater than 0')
+      }
+
+      if (!Number.isInteger(numYears)) {
+        throw new Error('Years must be an integer')
+      }
+
+      if (numYears > maxYearsAllowed) {
+        throw new Error(
+          `Years cannot exceed the maximum allowed (${maxYearsAllowed})`,
+        )
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Years')) {
+        throw error
+      }
+      // If we can't get constraints, fall back to a reasonable default validation
+      if (numYears <= 0 || numYears > 20 || !Number.isInteger(numYears)) {
+        throw new Error('Years must be an integer between 1 and 20')
+      }
+    }
+
     // TODO: linkOnMint functionality is currently not supported but preserved for future use
     const linkOnMint = false
 
