@@ -19,7 +19,7 @@ import {
   CloneAppClientParams,
 } from '@algorandfoundation/algokit-utils/types/app-client'
 import { AppFactory as _AppFactory, AppFactoryAppClientParams, AppFactoryResolveAppClientByCreatorAndNameParams, AppFactoryDeployParams, AppFactoryParams, CreateSchema } from '@algorandfoundation/algokit-utils/types/app-factory'
-import { TransactionComposer, AppCallMethodCall, AppMethodCallTransactionArgument, SimulateOptions, RawSimulateOptions, SkipSignaturesSimulateOptions } from '@algorandfoundation/algokit-utils/types/composer'
+import { TransactionComposer, AppCallMethodCall, AppMethodCallTransactionArgument, SimulateOptions } from '@algorandfoundation/algokit-utils/types/composer'
 import { SendParams, SendSingleTransactionResult, SendAtomicTransactionComposerResults } from '@algorandfoundation/algokit-utils/types/transaction'
 import { Address, encodeAddress, modelsv2, OnApplicationComplete, Transaction, TransactionSigner } from 'algosdk'
 import SimulateResponse = modelsv2.SimulateResponse
@@ -471,13 +471,11 @@ export type NfdRegistryTypes = {
    */
   state: {
     local: {
-      keys: {}
       maps: {
         localState: Map<Uint8Array | string, Uint8Array>
       }
     }
     box: {
-      keys: {}
       maps: {
         boxes: Map<Uint8Array | string, Uint8Array>
       }
@@ -992,8 +990,8 @@ export class NfdRegistryFactory {
   public async deploy(params: NfdRegistryDeployParams = {}) {
     const result = await this.appFactory.deploy({
       ...params,
-      createParams: params.createParams?.method ? NfdRegistryParamsFactory.create._resolveByMethod(params.createParams) : params.createParams ? params.createParams as (NfdRegistryCreateCallParams & { args: Uint8Array[] }) : undefined,
-      updateParams: params.updateParams?.method ? NfdRegistryParamsFactory.update._resolveByMethod(params.updateParams) : params.updateParams ? params.updateParams as (NfdRegistryUpdateCallParams & { args: Uint8Array[] }) : undefined,
+      createParams: params.createParams?.method ? NfdRegistryParamsFactory.create._resolveByMethod(params.createParams) : params.createParams,
+      updateParams: params.updateParams?.method ? NfdRegistryParamsFactory.update._resolveByMethod(params.updateParams) : params.updateParams,
     })
     return { result: result.result, appClient: new NfdRegistryClient(result.appClient) }
   }
@@ -1071,7 +1069,7 @@ export class NfdRegistryFactory {
        */
       createApplication: async (params: CallParams<NfdRegistryArgs['obj']['createApplication()void'] | NfdRegistryArgs['tuple']['createApplication()void']> & AppClientCompilationParams & CreateSchema & SendParams & {onComplete?: OnApplicationComplete.NoOpOC} = {args: []}) => {
         const result = await this.appFactory.send.create(NfdRegistryParamsFactory.create.createApplication(params))
-        return { result: { ...result.result, return: result.result.return as unknown as (undefined | NfdRegistryReturns['createApplication()void']) }, appClient: new NfdRegistryClient(result.appClient) }
+        return { result: { ...result.result, return: result.result.return as undefined | NfdRegistryReturns['createApplication()void'] }, appClient: new NfdRegistryClient(result.appClient) }
       },
     },
 
@@ -1723,7 +1721,7 @@ export class NfdRegistryClient {
        */
       updateApplication: async (params: CallParams<NfdRegistryArgs['obj']['updateApplication()void'] | NfdRegistryArgs['tuple']['updateApplication()void']> & AppClientCompilationParams & SendParams = {args: []}) => {
         const result = await this.appClient.send.update(NfdRegistryParamsFactory.update.updateApplication(params))
-        return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['updateApplication()void'])}
+        return {...result, return: result.return as undefined | NfdRegistryReturns['updateApplication()void']}
       },
 
     },
@@ -1746,7 +1744,7 @@ export class NfdRegistryClient {
      */
     gas: async (params: CallParams<NfdRegistryArgs['obj']['gas()void'] | NfdRegistryArgs['tuple']['gas()void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC} = {args: []}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.gas(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['gas()void'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['gas()void']}
     },
 
     /**
@@ -1761,7 +1759,7 @@ export class NfdRegistryClient {
      */
     getPrice: async (params: CallParams<NfdRegistryArgs['obj']['getPrice(string,address)(uint64,uint64,bool,bool,bool)'] | NfdRegistryArgs['tuple']['getPrice(string,address)(uint64,uint64,bool,bool,bool)']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.getPrice(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['getPrice(string,address)(uint64,uint64,bool,bool,bool)'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['getPrice(string,address)(uint64,uint64,bool,bool,bool)']}
     },
 
     /**
@@ -1772,7 +1770,7 @@ export class NfdRegistryClient {
      */
     getConstraints: async (params: CallParams<NfdRegistryArgs['obj']['getConstraints()(uint64,uint64,uint64,address,uint64,uint64,uint64)'] | NfdRegistryArgs['tuple']['getConstraints()(uint64,uint64,uint64,address,uint64,uint64,uint64)']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC} = {args: []}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.getConstraints(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['getConstraints()(uint64,uint64,uint64,address,uint64,uint64,uint64)'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['getConstraints()(uint64,uint64,uint64,address,uint64,uint64,uint64)']}
     },
 
     /**
@@ -1788,7 +1786,7 @@ export class NfdRegistryClient {
      */
     getNfdMbrCost: async (params: CallParams<NfdRegistryArgs['obj']['getNfdMbrCost(string)uint64'] | NfdRegistryArgs['tuple']['getNfdMbrCost(string)uint64']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.getNfdMbrCost(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['getNfdMbrCost(string)uint64'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['getNfdMbrCost(string)uint64']}
     },
 
     /**
@@ -1799,7 +1797,7 @@ export class NfdRegistryClient {
      */
     getNfdLinkOnMintExtraMbrCost: async (params: CallParams<NfdRegistryArgs['obj']['getNfdLinkOnMintExtraMbrCost(address)(uint64,uint64)'] | NfdRegistryArgs['tuple']['getNfdLinkOnMintExtraMbrCost(address)(uint64,uint64)']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.getNfdLinkOnMintExtraMbrCost(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['getNfdLinkOnMintExtraMbrCost(address)(uint64,uint64)'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['getNfdLinkOnMintExtraMbrCost(address)(uint64,uint64)']}
     },
 
     /**
@@ -1812,7 +1810,7 @@ export class NfdRegistryClient {
      */
     mintNfd: async (params: CallParams<NfdRegistryArgs['obj']['mintNfd(pay,string,address,bool)uint64'] | NfdRegistryArgs['tuple']['mintNfd(pay,string,address,bool)uint64']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.mintNfd(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['mintNfd(pay,string,address,bool)uint64'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['mintNfd(pay,string,address,bool)uint64']}
     },
 
     /**
@@ -1823,7 +1821,7 @@ export class NfdRegistryClient {
      */
     linkNfdAddress: async (params: CallParams<NfdRegistryArgs['obj']['linkNfdAddress(string,uint64,address)void'] | NfdRegistryArgs['tuple']['linkNfdAddress(string,uint64,address)void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.linkNfdAddress(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['linkNfdAddress(string,uint64,address)void'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['linkNfdAddress(string,uint64,address)void']}
     },
 
     /**
@@ -1834,7 +1832,7 @@ export class NfdRegistryClient {
      */
     unlinkNfdAddress: async (params: CallParams<NfdRegistryArgs['obj']['unlinkNfdAddress(string,uint64,address)void'] | NfdRegistryArgs['tuple']['unlinkNfdAddress(string,uint64,address)void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.unlinkNfdAddress(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['unlinkNfdAddress(string,uint64,address)void'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['unlinkNfdAddress(string,uint64,address)void']}
     },
 
     /**
@@ -1845,7 +1843,7 @@ export class NfdRegistryClient {
      */
     ownershipAssign: async (params: CallParams<NfdRegistryArgs['obj']['ownershipAssign(string,uint64)void'] | NfdRegistryArgs['tuple']['ownershipAssign(string,uint64)void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.ownershipAssign(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['ownershipAssign(string,uint64)void'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['ownershipAssign(string,uint64)void']}
     },
 
     /**
@@ -1861,7 +1859,7 @@ export class NfdRegistryClient {
      */
     ownershipChanged: async (params: CallParams<NfdRegistryArgs['obj']['ownershipChanged(string,uint64,address,address)void'] | NfdRegistryArgs['tuple']['ownershipChanged(string,uint64,address,address)void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.ownershipChanged(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['ownershipChanged(string,uint64,address,address)void'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['ownershipChanged(string,uint64,address,address)void']}
     },
 
     /**
@@ -1877,7 +1875,7 @@ export class NfdRegistryClient {
      */
     setAddressPrimaryNfd: async (params: CallParams<NfdRegistryArgs['obj']['setAddressPrimaryNfd(string,uint64,address)void'] | NfdRegistryArgs['tuple']['setAddressPrimaryNfd(string,uint64,address)void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.setAddressPrimaryNfd(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['setAddressPrimaryNfd(string,uint64,address)void'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['setAddressPrimaryNfd(string,uint64,address)void']}
     },
 
     /**
@@ -1888,7 +1886,7 @@ export class NfdRegistryClient {
      */
     upgradeNfd: async (params: CallParams<NfdRegistryArgs['obj']['upgradeNfd(string)string'] | NfdRegistryArgs['tuple']['upgradeNfd(string)string']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.upgradeNfd(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['upgradeNfd(string)string'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['upgradeNfd(string)string']}
     },
 
     /**
@@ -1899,7 +1897,7 @@ export class NfdRegistryClient {
      */
     isValidNfdAppId: async (params: CallParams<NfdRegistryArgs['obj']['isValidNfdAppId(string,uint64)bool'] | NfdRegistryArgs['tuple']['isValidNfdAppId(string,uint64)bool']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.isValidNfdAppId(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['isValidNfdAppId(string,uint64)bool'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['isValidNfdAppId(string,uint64)bool']}
     },
 
     /**
@@ -1910,7 +1908,7 @@ export class NfdRegistryClient {
      */
     getNameAppId: async (params: CallParams<NfdRegistryArgs['obj']['getNameAppId(string)uint64'] | NfdRegistryArgs['tuple']['getNameAppId(string)uint64']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.getNameAppId(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['getNameAppId(string)uint64'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['getNameAppId(string)uint64']}
     },
 
     /**
@@ -1921,7 +1919,7 @@ export class NfdRegistryClient {
      */
     getAddressAppIds: async (params: CallParams<NfdRegistryArgs['obj']['getAddressAppIds(address)uint64[]'] | NfdRegistryArgs['tuple']['getAddressAppIds(address)uint64[]']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.getAddressAppIds(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['getAddressAppIds(address)uint64[]'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['getAddressAppIds(address)uint64[]']}
     },
 
     /**
@@ -1934,7 +1932,7 @@ export class NfdRegistryClient {
      */
     nfdContractInit: async (params: CallParams<NfdRegistryArgs['obj']['nfdContractInit(string,uint64,byte[])void'] | NfdRegistryArgs['tuple']['nfdContractInit(string,uint64,byte[])void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.nfdContractInit(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['nfdContractInit(string,uint64,byte[])void'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['nfdContractInit(string,uint64,byte[])void']}
     },
 
     /**
@@ -1947,7 +1945,7 @@ export class NfdRegistryClient {
      */
     nfdContractLoad: async (params: CallParams<NfdRegistryArgs['obj']['nfdContractLoad(string,uint64,byte[])void'] | NfdRegistryArgs['tuple']['nfdContractLoad(string,uint64,byte[])void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.nfdContractLoad(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['nfdContractLoad(string,uint64,byte[])void'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['nfdContractLoad(string,uint64,byte[])void']}
     },
 
     /**
@@ -1960,7 +1958,7 @@ export class NfdRegistryClient {
      */
     nfdContractCommit: async (params: CallParams<NfdRegistryArgs['obj']['nfdContractCommit(string)void'] | NfdRegistryArgs['tuple']['nfdContractCommit(string)void']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.nfdContractCommit(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['nfdContractCommit(string)void'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['nfdContractCommit(string)void']}
     },
 
     /**
@@ -1971,7 +1969,7 @@ export class NfdRegistryClient {
      */
     usdInMicroAlgo: async (params: CallParams<NfdRegistryArgs['obj']['usdInMicroAlgo(uint64)uint64'] | NfdRegistryArgs['tuple']['usdInMicroAlgo(uint64)uint64']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.usdInMicroAlgo(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['usdInMicroAlgo(uint64)uint64'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['usdInMicroAlgo(uint64)uint64']}
     },
 
     /**
@@ -1984,7 +1982,7 @@ export class NfdRegistryClient {
      */
     costToAddToAddress: async (params: CallParams<NfdRegistryArgs['obj']['costToAddToAddress(address)uint64'] | NfdRegistryArgs['tuple']['costToAddToAddress(address)uint64']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.costToAddToAddress(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['costToAddToAddress(address)uint64'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['costToAddToAddress(address)uint64']}
     },
 
     /**
@@ -1997,7 +1995,7 @@ export class NfdRegistryClient {
      */
     calcFuturePrice: async (params: CallParams<NfdRegistryArgs['obj']['calcFuturePrice(uint64,uint64)uint64'] | NfdRegistryArgs['tuple']['calcFuturePrice(uint64,uint64)uint64']> & SendParams & {onComplete?: OnApplicationComplete.NoOpOC}) => {
       const result = await this.appClient.send.call(NfdRegistryParamsFactory.calcFuturePrice(params))
-      return {...result, return: result.return as unknown as (undefined | NfdRegistryReturns['calcFuturePrice(uint64,uint64)uint64'])}
+      return {...result, return: result.return as undefined | NfdRegistryReturns['calcFuturePrice(uint64,uint64)uint64']}
     },
 
   }
@@ -2273,7 +2271,7 @@ export class NfdRegistryClient {
       },
       async simulate(options?: SimulateOptions) {
         await promiseChain
-        const result = await (!options ? composer.simulate() : composer.simulate(options))
+        const result = await composer.simulate(options)
         return {
           ...result,
           returns: result.returns?.map((val, i) => resultMappers[i] !== undefined ? resultMappers[i]!(val) : val.returnValue)
@@ -2529,13 +2527,11 @@ export type NfdRegistryComposer<TReturns extends [...any[]] = []> = {
   /**
    * Returns the underlying AtomicTransactionComposer instance
    */
-  composer(): Promise<TransactionComposer>
+  composer(): TransactionComposer
   /**
    * Simulates the transaction group and returns the result
    */
-  simulate(): Promise<NfdRegistryComposerResults<TReturns> & { simulateResponse: SimulateResponse }>
-  simulate(options: SkipSignaturesSimulateOptions): Promise<NfdRegistryComposerResults<TReturns> & { simulateResponse: SimulateResponse }>
-  simulate(options: RawSimulateOptions): Promise<NfdRegistryComposerResults<TReturns> & { simulateResponse: SimulateResponse }>
+  simulate(options?: SimulateOptions): Promise<NfdRegistryComposerResults<TReturns> & { simulateResponse: SimulateResponse }>
   /**
    * Sends the transaction group to the network and returns the results
    */

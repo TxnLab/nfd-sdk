@@ -57,11 +57,69 @@ importers:
         specifier: ^0.23.0
         version: 0.23.0(rollup@4.34.8)(vite@4.5.9(@types/node@22.13.5))
 
+  examples/with-use-wallet:
+    dependencies:
+      '@txnlab/nfd-sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      '@txnlab/use-wallet-react':
+        specifier: ^4.0.0
+        version: 4.0.0(algosdk@3.2.0)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      algosdk:
+        specifier: ^3.2.0
+        version: 3.2.0
+      buffer:
+        specifier: ^6.0.3
+        version: 6.0.3
+      lute-connect:
+        specifier: ^1.4.1
+        version: 1.4.1
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.2.64
+        version: 18.3.18
+      '@types/react-dom':
+        specifier: ^18.2.21
+        version: 18.3.5(@types/react@18.3.18)
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^7.1.1
+        version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.7.3))(eslint@8.57.1)(typescript@5.7.3)
+      '@typescript-eslint/parser':
+        specifier: ^7.1.1
+        version: 7.18.0(eslint@8.57.1)(typescript@5.7.3)
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.3.4(vite@4.5.9(@types/node@22.13.5))
+      eslint:
+        specifier: ^8.57.0
+        version: 8.57.1
+      eslint-plugin-react-hooks:
+        specifier: ^4.6.0
+        version: 4.6.2(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.4.5
+        version: 0.4.19(eslint@8.57.1)
+      typescript:
+        specifier: ^5.2.2
+        version: 5.7.3
+      vite:
+        specifier: ^4.5.2
+        version: 4.5.9(@types/node@22.13.5)
+      vite-plugin-node-polyfills:
+        specifier: ^0.23.0
+        version: 0.23.0(rollup@4.34.8)(vite@4.5.9(@types/node@22.13.5))
+
   packages/sdk:
     dependencies:
       '@algorandfoundation/algokit-utils':
-        specifier: ^8.2.1
-        version: 8.2.1(algosdk@3.2.0)
+        specifier: 8.0.0
+        version: 8.0.0(algosdk@3.2.0)
       '@hey-api/client-fetch':
         specifier: ^0.8.1
         version: 0.8.1
@@ -73,8 +131,8 @@ importers:
         version: 4.2.0
     devDependencies:
       '@algorandfoundation/algokit-client-generator':
-        specifier: ^4.0.8
-        version: 4.0.8(@algorandfoundation/algokit-utils@8.2.1(algosdk@3.2.0))(algosdk@3.2.0)
+        specifier: 4.0.2
+        version: 4.0.2(@algorandfoundation/algokit-utils@8.0.0(algosdk@3.2.0))(algosdk@3.2.0)
       '@hey-api/openapi-ts':
         specifier: ^0.64.5
         version: 0.64.5(typescript@5.7.3)
@@ -129,16 +187,16 @@ importers:
 
 packages:
 
-  '@algorandfoundation/algokit-client-generator@4.0.8':
-    resolution: {integrity: sha512-jez08mzZeFzzFAymVjFZrVXPf3BFFzU2EyUp5csiYsHdc/040pRSxRb91qlyaVmTGT9mO4JbK0ztNIiwC1xfCw==}
+  '@algorandfoundation/algokit-client-generator@4.0.2':
+    resolution: {integrity: sha512-c57qdsEMjJ6UMpEc2/IzZ/aPlGJ9olO1s+HTzsmG/FHPge/mASIZypxBncNQo/fdL1XhkafMje/1kwGfDd6xeg==}
     engines: {node: '>=20.0'}
     hasBin: true
     peerDependencies:
-      '@algorandfoundation/algokit-utils': ^7.0.1 || ^8.0.1
+      '@algorandfoundation/algokit-utils': ^7.0.0 || ^8.0.0
       algosdk: ^2.9.0 || ^3.0.0
 
-  '@algorandfoundation/algokit-utils@8.2.1':
-    resolution: {integrity: sha512-GmVY/PeCScqFPuL3oZY2zzHkYf+EnYIR2NqAJ8k/2fYQfeinbBV1XIgj6zXkgqG/ISKI4L7g/poD93MgS6nS7Q==}
+  '@algorandfoundation/algokit-utils@8.0.0':
+    resolution: {integrity: sha512-SIrQpWFJaAbqwN6dMvvEPYxggUjtq2OCpfRLvmBWksJ/Psi2CLdsS3R84vmilszRaLX5C1aRTv0c1rBxYEe3+w==}
     engines: {node: '>=20.0'}
     peerDependencies:
       algosdk: ^3.0.0
@@ -973,6 +1031,68 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  '@tanstack/react-store@0.7.0':
+    resolution: {integrity: sha512-S/Rq17HaGOk+tQHV/yrePMnG1xbsKZIl/VsNWnNXt4XW+tTY8dTlvpJH2ZQ3GRALsusG5K6Q3unAGJ2pd9W/Ng==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@tanstack/store@0.7.0':
+    resolution: {integrity: sha512-CNIhdoUsmD2NolYuaIs8VfWM467RK6oIBAW4nPEKZhg1smZ+/CwtCdpURgp7nxSqOaV9oKkzdWD80+bC66F/Jg==}
+
+  '@txnlab/use-wallet-react@4.0.0':
+    resolution: {integrity: sha512-Wi483V73qhBv6P7beXfqcSXZs2qEamnX6Da/xOOkHA3qqwv7vjHD+JFm3iUQPcnfwIt9vHyllXpArWbs31lm2w==}
+    peerDependencies:
+      '@blockshake/defly-connect': ^1.2.1
+      '@magic-ext/algorand': ^23.20.0
+      '@perawallet/connect': ^1.4.1
+      '@walletconnect/modal': ^2.7.0
+      '@walletconnect/sign-client': ^2.17.3
+      algosdk: ^3.0.0
+      lute-connect: ^1.4.1
+      magic-sdk: ^28.21.0
+      react: ^17.0.0 || ^18.0.0
+      react-dom: ^17.0.0 || ^18.0.0
+    peerDependenciesMeta:
+      '@blockshake/defly-connect':
+        optional: true
+      '@magic-ext/algorand':
+        optional: true
+      '@perawallet/connect':
+        optional: true
+      '@walletconnect/modal':
+        optional: true
+      '@walletconnect/sign-client':
+        optional: true
+      lute-connect:
+        optional: true
+      magic-sdk:
+        optional: true
+
+  '@txnlab/use-wallet@4.0.0':
+    resolution: {integrity: sha512-+Iw6KTzfED4+fAP/amdPgnPBZSSSH0eTZvjgnhMbPY/dbvC8dXOblNB1n5fSOdAK2e2j5W62QGI0v13GSZqNEg==}
+    peerDependencies:
+      '@agoralabs-sh/avm-web-provider': ^1.7.0
+      '@blockshake/defly-connect': ^1.2.1
+      '@perawallet/connect': ^1.4.1
+      '@walletconnect/modal': ^2.7.0
+      '@walletconnect/sign-client': ^2.17.3
+      algosdk: ^3.0.0
+      lute-connect: ^1.4.1
+    peerDependenciesMeta:
+      '@agoralabs-sh/avm-web-provider':
+        optional: true
+      '@blockshake/defly-connect':
+        optional: true
+      '@perawallet/connect':
+        optional: true
+      '@walletconnect/modal':
+        optional: true
+      '@walletconnect/sign-client':
+        optional: true
+      lute-connect:
+        optional: true
+
   '@types/argparse@1.0.38':
     resolution: {integrity: sha512-ebDJ9b0e702Yr7pWgB0jzm+CX4Srzz8RcXtLJDJB+BSccqMa36uyH/zUsSYao5+BD1ytv3k3rPYCq4mAE1hsXA==}
 
@@ -1593,8 +1713,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
-  electron-to-chromium@1.5.103:
-    resolution: {integrity: sha512-P6+XzIkfndgsrjROJWfSvVEgNHtPgbhVyTkwLjUM2HU/h7pZRORgaTlHqfAikqxKmdJMLW8fftrdGWbd/Ds0FA==}
+  electron-to-chromium@1.5.104:
+    resolution: {integrity: sha512-Us9M2L4cO/zMBqVkJtnj353nQhMju9slHm62NprKTmdF3HH8wYOtNvDFq/JB2+ZRoGLzdvYDiATlMHs98XBM1g==}
 
   elliptic@6.6.1:
     resolution: {integrity: sha512-RaddvvMatK2LJHqFJ+YA4WysVN5Ita9E35botqIYspQ4TkRAlCicdzKOjlyv/1Za5RyTNn7di//eEV0uTAfe3g==}
@@ -2316,6 +2436,9 @@ packages:
 
   lunr@2.3.9:
     resolution: {integrity: sha512-zTU3DaZaF3Rt9rhN3uBMGQD3dD2/vFQqnvZCDv4dl5iOzq2IZQqTxu90r4E5J+nP70J3ilqVCrbho2eWaeW8Ow==}
+
+  lute-connect@1.4.1:
+    resolution: {integrity: sha512-mOiu0NzXR4Ep8w8xBBVX3naoM9/VMPudZZWrtRS6pk+g83czfzmoMwlsuzUltC/t+UrNFlSP8xKp2M9bmYtf8Q==}
 
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
@@ -3078,12 +3201,12 @@ packages:
     peerDependencies:
       typedoc: 0.27.x
 
-  typedoc@0.27.8:
-    resolution: {integrity: sha512-q0/2TUunNEDmWkn23ULKGXieK8cgGuAmBUXC/HcZ/rgzMI9Yr4Nq3in1K1vT1NZ9zx6M78yTk3kmIPbwJgK5KA==}
+  typedoc@0.27.9:
+    resolution: {integrity: sha512-/z585740YHURLl9DN2jCWe6OW7zKYm6VoQ93H0sxZ1cwHQEQrUn5BJrEnkWhfzUdyO+BLGjnKUZ9iz9hKloFDw==}
     engines: {node: '>= 18'}
     hasBin: true
     peerDependencies:
-      typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x
+      typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x || 5.8.x
 
   typescript-eslint@8.25.0:
     resolution: {integrity: sha512-TxRdQQLH4g7JkoFlYG3caW5v1S6kEkz8rqt80iQJZUYPq1zD1Ra7HfQBJJ88ABRaMvHAXnwRvRB4V+6sQ9xN5Q==}
@@ -3144,6 +3267,11 @@ packages:
   url@0.11.4:
     resolution: {integrity: sha512-oCwdVC7mTuWiPyjLUz/COz5TLk6wgp0RCsN+wHZ2Ekneac9w8uuV0njcbbie2ME+Vs+d6duwmYuR3HgQXs1fOg==}
     engines: {node: '>= 0.4'}
+
+  use-sync-external-store@1.4.0:
+    resolution: {integrity: sha512-9WXSPC5fMv61vaupRkCKCxsPxBocVnwakBEkMIHHpkTTg6icbJtg6jzgtLDm4bl3cSHAca52rYWih0k4K3PfHw==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -3291,16 +3419,16 @@ packages:
 
 snapshots:
 
-  '@algorandfoundation/algokit-client-generator@4.0.8(@algorandfoundation/algokit-utils@8.2.1(algosdk@3.2.0))(algosdk@3.2.0)':
+  '@algorandfoundation/algokit-client-generator@4.0.2(@algorandfoundation/algokit-utils@8.0.0(algosdk@3.2.0))(algosdk@3.2.0)':
     dependencies:
-      '@algorandfoundation/algokit-utils': 8.2.1(algosdk@3.2.0)
+      '@algorandfoundation/algokit-utils': 8.0.0(algosdk@3.2.0)
       algosdk: 3.2.0
       chalk: 4.1.2
       change-case: 5.4.4
       commander: 11.1.0
       jsonschema: 1.5.0
 
-  '@algorandfoundation/algokit-utils@8.2.1(algosdk@3.2.0)':
+  '@algorandfoundation/algokit-utils@8.0.0(algosdk@3.2.0)':
     dependencies:
       algosdk: 3.2.0
       buffer: 6.0.3
@@ -3987,9 +4115,9 @@ snapshots:
       rollup-plugin-preserve-directives: 0.4.0(rollup@4.34.8)
       semver: 7.7.1
       simple-git: 3.27.0
-      typedoc: 0.27.8(typescript@5.7.3)
-      typedoc-plugin-frontmatter: 1.2.1(typedoc-plugin-markdown@4.4.2(typedoc@0.27.8(typescript@5.7.3)))
-      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.8(typescript@5.7.3))
+      typedoc: 0.27.9(typescript@5.7.3)
+      typedoc-plugin-frontmatter: 1.2.1(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.7.3)))
+      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.7.3))
       typescript-eslint: 8.25.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3)
       v8flags: 4.0.1
       vite-plugin-dts: 4.2.3(@types/node@22.13.5)(rollup@4.34.8)(typescript@5.7.3)(vite@4.5.9(@types/node@22.13.5))
@@ -4004,6 +4132,34 @@ snapshots:
       - supports-color
       - typescript
       - vite
+
+  '@tanstack/react-store@0.7.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@tanstack/store': 0.7.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      use-sync-external-store: 1.4.0(react@18.3.1)
+
+  '@tanstack/store@0.7.0': {}
+
+  '@txnlab/use-wallet-react@4.0.0(algosdk@3.2.0)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@tanstack/react-store': 0.7.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@txnlab/use-wallet': 4.0.0(algosdk@3.2.0)(lute-connect@1.4.1)
+      algosdk: 3.2.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    optionalDependencies:
+      lute-connect: 1.4.1
+    transitivePeerDependencies:
+      - '@agoralabs-sh/avm-web-provider'
+
+  '@txnlab/use-wallet@4.0.0(algosdk@3.2.0)(lute-connect@1.4.1)':
+    dependencies:
+      '@tanstack/store': 0.7.0
+      algosdk: 3.2.0
+    optionalDependencies:
+      lute-connect: 1.4.1
 
   '@types/argparse@1.0.38': {}
 
@@ -4460,7 +4616,7 @@ snapshots:
   browserslist@4.24.4:
     dependencies:
       caniuse-lite: 1.0.30001700
-      electron-to-chromium: 1.5.103
+      electron-to-chromium: 1.5.104
       node-releases: 2.0.19
       update-browserslist-db: 1.1.2(browserslist@4.24.4)
 
@@ -4727,7 +4883,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  electron-to-chromium@1.5.103: {}
+  electron-to-chromium@1.5.104: {}
 
   elliptic@6.6.1:
     dependencies:
@@ -5595,6 +5751,8 @@ snapshots:
 
   lunr@2.3.9: {}
 
+  lute-connect@1.4.1: {}
+
   magic-string@0.30.17:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
@@ -6382,16 +6540,16 @@ snapshots:
 
   type-fest@4.35.0: {}
 
-  typedoc-plugin-frontmatter@1.2.1(typedoc-plugin-markdown@4.4.2(typedoc@0.27.8(typescript@5.7.3))):
+  typedoc-plugin-frontmatter@1.2.1(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.7.3))):
     dependencies:
-      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.8(typescript@5.7.3))
+      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.7.3))
       yaml: 2.7.0
 
-  typedoc-plugin-markdown@4.4.2(typedoc@0.27.8(typescript@5.7.3)):
+  typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.7.3)):
     dependencies:
-      typedoc: 0.27.8(typescript@5.7.3)
+      typedoc: 0.27.9(typescript@5.7.3)
 
-  typedoc@0.27.8(typescript@5.7.3):
+  typedoc@0.27.9(typescript@5.7.3):
     dependencies:
       '@gerrit0/mini-shiki': 1.27.2
       lunr: 2.3.9
@@ -6445,6 +6603,10 @@ snapshots:
     dependencies:
       punycode: 1.4.1
       qs: 6.14.0
+
+  use-sync-external-store@1.4.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
 
   util-deprecate@1.0.2: {}
 

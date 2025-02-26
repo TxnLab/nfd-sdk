@@ -45,7 +45,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@algorandfoundation/algokit-client-generator": "^4.0.8",
+    "@algorandfoundation/algokit-client-generator": "4.0.2",
     "@hey-api/openapi-ts": "^0.64.5",
     "@tanstack/config": "^0.16.2",
     "@types/crypto-js": "^4.2.2",
@@ -78,7 +78,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@algorandfoundation/algokit-utils": "^8.2.1",
+    "@algorandfoundation/algokit-utils": "8.0.0",
     "@hey-api/client-fetch": "^0.8.1",
     "algosdk": "^3.2.0",
     "crypto-js": "^4.2.0"

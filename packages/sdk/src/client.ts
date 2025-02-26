@@ -1,5 +1,6 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
-import { Address, decodeUint64 } from 'algosdk'
+import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
+import { Address, decodeUint64, TransactionSigner } from 'algosdk'
 import crypto from 'crypto-js'
 
 import { resolveFromApi, reverseLookupFromApi, searchFromApi } from './api'
@@ -20,7 +21,9 @@ export enum NfdRegistryId {
   TESTNET = 84366825,
 }
 
-/** Configuration options for the NFD client */
+/**
+ * Configuration options for the NFD client
+ */
 export interface NfdClientConfig {
   /**
    * An existing AlgorandClient instance
@@ -30,6 +33,21 @@ export interface NfdClientConfig {
    * The application ID of the NFD registry
    */
   registryId?: number | bigint
+}
+
+/**
+ * Configuration options for minting a new NFD
+ */
+export interface NfdMintParams {
+  /**
+   * The address of the buyer
+   */
+  buyer: string
+
+  /**
+   * Number of years until expiration (1-20)
+   */
+  years: number
 }
 
 /**
@@ -67,6 +85,16 @@ export class NfdClient {
       algorand: AlgorandClient.testNet(),
       registryId: NfdRegistryId.TESTNET,
     })
+  }
+
+  /**
+   * Set the default signer for subsequent transactions
+   * @param signer - The transaction signer
+   * @returns The NfdClient instance for chaining
+   */
+  setSigner(signer: TransactionSigner): NfdClient {
+    this._algorand.setDefaultSigner(signer)
+    return this
   }
 
   /**
@@ -123,29 +151,27 @@ export class NfdClient {
   /**
    * Get an NFD's application ID from its name
    * @param name - The NFD name
-   * @returns The NFD's application ID
-   * @throws If the NFD is not found
+   * @returns The NFD's application ID or null if not found
    */
-  private async getAppIdFromName(name: string): Promise<bigint> {
+  private async getAppIdFromName(name: string): Promise<bigint | null> {
     const registryClient = this.getRegistryClient()
     const boxName = this.getRegistryBoxNameForNFD(name)
-    let appIdBytes: Uint8Array | undefined
     try {
-      appIdBytes = await registryClient.appClient.getBoxValue(boxName)
+      const appIdBytes = await registryClient.appClient.getBoxValue(boxName)
+      if (!appIdBytes) {
+        return null
+      }
+      // Take the second 8 bytes for the app ID (bytes 8-15)
+      const appIdBytesSliced = appIdBytes.slice(8, 16)
+      return decodeUint64(appIdBytesSliced, 'bigint')
     } catch (error) {
       // Check if error is a 404 response
       if (error instanceof Error && error.message.includes('404')) {
-        throw new Error(`NFD not found: ${name}`)
+        return null
       }
       // Re-throw other errors
       throw error
     }
-    if (!appIdBytes) {
-      throw new Error(`NFD not found: ${name}`)
-    }
-    // Take the second 8 bytes for the app ID (bytes 8-15)
-    const appIdBytesSliced = appIdBytes.slice(8, 16)
-    return decodeUint64(appIdBytesSliced, 'bigint')
   }
 
   /**
@@ -153,11 +179,13 @@ export class NfdClient {
    * @internal
    * @param nameOrAppId - The NFD name or application ID to parse
    * @returns The NFD's application ID as a bigint
-   * @throws If the input is an invalid NFD name
+   * @throws If the input is an invalid NFD name or the NFD does not exist
    */
-  private async parseAppId(nameOrAppId: string | number): Promise<bigint> {
-    // If it's already a number, just convert to bigint
-    if (typeof nameOrAppId === 'number') {
+  private async parseAppId(
+    nameOrAppId: string | number | bigint,
+  ): Promise<bigint> {
+    // If it's already a number or bigint, just return it
+    if (typeof nameOrAppId !== 'string') {
       return BigInt(nameOrAppId)
     }
 
@@ -174,7 +202,12 @@ export class NfdClient {
       )
     }
 
-    return this.getAppIdFromName(nameOrAppId)
+    const appId = await this.getAppIdFromName(nameOrAppId)
+    if (appId === null) {
+      throw new Error(`NFD not found: ${nameOrAppId}`)
+    }
+
+    return appId
   }
 
   /**
@@ -327,7 +360,7 @@ export class NfdClient {
    * @throws If the NFD name is invalid or not found
    */
   async resolve(
-    nameOrAppId: string | number,
+    nameOrAppId: string | number | bigint,
     options: Pick<ResolveOptions, 'view'> = {},
   ): Promise<Nfd> {
     // Get the NFD app ID
@@ -456,6 +489,9 @@ export class NfdClient {
       name,
       appID: Number(nfdAppId),
       asaID: this.parseUint64('i.asaid', globalState),
+      ...(globalState['i.parentAppID'] && {
+        parentAppID: this.parseUint64('i.parentAppID', globalState),
+      }),
       owner: this.parseAddress('i.owner.a', globalState),
       state,
       ...(isExpired && { expired: true }),
@@ -524,6 +560,12 @@ export class NfdClient {
           owner: this.parseAddress('i.owner.a', globalState),
           seller: this.parseAddress('i.seller.a', globalState),
           asaid: this.parseUint64('i.asaid', globalState).toString(),
+          ...(globalState['i.parentAppID'] && {
+            parentAppID: this.parseUint64(
+              'i.parentAppID',
+              globalState,
+            ).toString(),
+          }),
           timeChanged: this.parseUint64(
             'i.timeChanged',
             globalState,
@@ -551,6 +593,120 @@ export class NfdClient {
     }
 
     return nfd
+  }
+
+  /**
+   * Mint a new NFD
+   * @param nfdName - The name of the NFD to mint
+   * @param params - Configuration options for minting
+   * @returns The minted NFD record
+   * @throws If the mint operation fails
+   */
+  async mint(nfdName: string, params: NfdMintParams): Promise<Nfd> {
+    // Validate NFD name format
+    if (!this.isValidName(nfdName)) {
+      throw new Error(
+        `Invalid NFD name: ${nfdName}. Name must be in the format 'name.algo' or 'segment.name.algo'`,
+      )
+    }
+
+    // Check if NFD already exists
+    const existingAppId = await this.getAppIdFromName(nfdName)
+    if (existingAppId !== null) {
+      throw new Error(
+        `NFD already exists: ${nfdName} (appID: ${existingAppId})`,
+      )
+    }
+
+    const { buyer: buyerAddr, years: numYears } = params
+    // TODO: linkOnMint functionality is currently not supported but preserved for future use
+    const linkOnMint = false
+
+    // Get the registry client for executing the mint transaction
+    const registryClient = this.getRegistryClient(buyerAddr)
+
+    // Calculate any extra MBR cost for linking on mint
+    let extraForMbr = 0n
+    if (linkOnMint) {
+      const extraMbrRet = (
+        await registryClient
+          .newGroup()
+          .getNfdLinkOnMintExtraMbrCost({ args: { address: buyerAddr } })
+          .simulate({ skipSignatures: true, allowUnnamedResources: true })
+      ).returns![0]
+      extraForMbr =
+        extraMbrRet!.linkingNfdMbrCost + extraMbrRet!.linkingRegistryMbrCost
+    }
+
+    // Get price quote for the NFD
+    const priceInfo = await registryClient
+      .newGroup()
+      .gas({ args: {} })
+      .getPrice({ args: { nfdName, caller: buyerAddr } })
+      .simulate({
+        skipSignatures: true,
+        allowUnnamedResources: true,
+        extraOpcodeBudget: 2100,
+      })
+
+    // Check for simulation failure
+    const failureMessage =
+      priceInfo.simulateResponse.txnGroups[0].failureMessage
+    if (failureMessage) {
+      throw new Error(`Failed to get price: ${failureMessage}`)
+    }
+
+    if (!priceInfo.returns[1]) {
+      throw new Error('Failed to get price: Price info not returned')
+    }
+
+    const { oneYearPrice, carryCost } = priceInfo.returns[1]
+
+    // Calculate extra fee based on NFD type
+    const isSegment = this.isValidSegment(nfdName)
+    let extraFee = isSegment ? 12000 : 10000
+    if (linkOnMint) {
+      extraFee += 3000
+    }
+
+    // Create payment transaction for the NFD price
+    const paymentTxn = await this._algorand.createTransaction.payment({
+      sender: buyerAddr,
+      receiver: registryClient.appAddress,
+      // Calculate total cost: (years * yearly price) + carry cost + extra MBR if linking
+      amount: AlgoAmount.MicroAlgos(
+        BigInt(numYears) * oneYearPrice + carryCost + extraForMbr,
+      ),
+    })
+
+    // Execute the mint transaction
+    const mintResult = await registryClient
+      .newGroup()
+      .gas({ args: {}, note: '1' })
+      .gas({ args: {}, note: '2' })
+      .gas({ args: {}, note: '3' })
+      .gas({ args: {}, note: '4' })
+      .mintNfd({
+        args: {
+          purchaseTxn: paymentTxn,
+          nfdName,
+          reservedFor: buyerAddr,
+          linkOnMint,
+        },
+        extraFee: AlgoAmount.MicroAlgos(extraFee),
+      })
+      .send({ populateAppCallResources: true })
+
+    const nfdAppId = mintResult.returns[4]
+
+    if (!nfdAppId) {
+      throw new Error(
+        'NFD was minted successfully but the app ID was not returned',
+      )
+    }
+
+    // Return the minted NFD record
+    return this.resolve(nfdAppId, { view: 'full' })
   }
 
   /**
