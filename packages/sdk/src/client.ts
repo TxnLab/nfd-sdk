@@ -728,24 +728,8 @@ export class NfdClient {
       }
     }
 
-    // TODO: linkOnMint functionality is currently not supported but preserved for future use
-    const linkOnMint = false
-
     // Get the registry client for executing the mint transaction
     const registryClient = this.getRegistryClient(buyerAddr)
-
-    // Calculate any extra MBR cost for linking on mint
-    let extraForMbr = 0n
-    if (linkOnMint) {
-      const extraMbrRet = (
-        await registryClient
-          .newGroup()
-          .getNfdLinkOnMintExtraMbrCost({ args: { address: buyerAddr } })
-          .simulate({ skipSignatures: true, allowUnnamedResources: true })
-      ).returns![0]
-      extraForMbr =
-        extraMbrRet!.linkingNfdMbrCost + extraMbrRet!.linkingRegistryMbrCost
-    }
 
     // Get price quote for the NFD
     const priceInfo = await registryClient
@@ -773,10 +757,7 @@ export class NfdClient {
 
     // Calculate extra fee based on NFD type
     const isSegment = this.isValidSegment(nfdName)
-    let extraFee = isSegment ? 12000 : 10000
-    if (linkOnMint) {
-      extraFee += 3000
-    }
+    const extraFee = isSegment ? 12000 : 10000
 
     // Create payment transaction for the NFD price
     const paymentTxn = await this._algorand.createTransaction.payment({
@@ -784,7 +765,7 @@ export class NfdClient {
       receiver: registryClient.appAddress,
       // Calculate total cost: (years * yearly price) + carry cost + extra MBR if linking
       amount: AlgoAmount.MicroAlgos(
-        BigInt(numYears) * oneYearPrice + carryCost + extraForMbr,
+        BigInt(numYears) * oneYearPrice + carryCost,
       ),
     })
 
@@ -800,7 +781,7 @@ export class NfdClient {
           purchaseTxn: paymentTxn,
           nfdName,
           reservedFor: buyerAddr,
-          linkOnMint,
+          linkOnMint: false,
         },
         extraFee: AlgoAmount.MicroAlgos(extraFee),
       })
