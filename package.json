@@ -1,39 +1,55 @@
 {
-	"name": "@txnlab/nfd-sdk-monorepo",
-	"private": true,
-	"description": "Monorepo for NFDomains SDK and related packages",
-	"type": "module",
-	"scripts": {
-		"build": "pnpm -r build",
-		"test": "pnpm -r test",
-		"lint": "pnpm -r lint",
-		"format": "pnpm -r format",
-		"clean": "pnpm -r clean",
-		"publish:packages": "pnpm -r publish:package",
-		"fetch:openapi": "pnpm -F @txnlab/nfd-sdk fetch:openapi",
-		"fetch:arc56": "pnpm -F @txnlab/nfd-sdk fetch:arc56",
-		"fetch:specs": "pnpm -F @txnlab/nfd-sdk fetch:specs"
-	},
-	"keywords": [
-		"algorand",
-		"nfd",
-		"nfdomains",
-		"blockchain",
-		"domains",
-		"sdk"
-	],
-	"author": "TxnLab Inc.",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/TxnLab/nfd-sdk.git"
-	},
-	"bugs": {
-		"url": "https://github.com/TxnLab/nfd-sdk/issues"
-	},
-	"homepage": "https://github.com/TxnLab/nfd-sdk#readme",
-	"engines": {
-		"node": ">=18",
-		"pnpm": ">=8"
-	}
+  "name": "@txnlab/nfd-sdk-monorepo",
+  "private": true,
+  "description": "Monorepo for NFDomains SDK and related packages",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "format": "pnpm -r format",
+    "clean": "pnpm -r clean",
+    "publish:packages": "pnpm -r publish:package",
+    "fetch:openapi": "pnpm -F @txnlab/nfd-sdk fetch:openapi",
+    "fetch:arc56": "pnpm -F @txnlab/nfd-sdk fetch:arc56",
+    "fetch:specs": "pnpm -F @txnlab/nfd-sdk fetch:specs"
+  },
+  "keywords": [
+    "algorand",
+    "nfd",
+    "nfdomains",
+    "blockchain",
+    "domains",
+    "sdk"
+  ],
+  "author": "TxnLab Inc.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TxnLab/nfd-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TxnLab/nfd-sdk/issues"
+  },
+  "homepage": "https://github.com/TxnLab/nfd-sdk#readme",
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
+    "eslint": "^9.20.1",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-import-x": "^4.6.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "eslint-plugin-unicorn": "^57.0.0",
+    "globals": "^14.0.0",
+    "prettier": "^3.5.1",
+    "typescript": "^5.5.3"
+  }
 }

@@ -1,7 +1,8 @@
-import { config } from 'dotenv'
+import { writeFile, mkdir } from 'fs/promises'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { writeFile, mkdir } from 'fs/promises'
+
+import { config } from 'dotenv'
 import fetch from 'node-fetch'
 
 // Load environment variables from root and package .env files

@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsup",
     "test": "jest",
-    "lint": "eslint .",
+    "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
     "format": "prettier --write .",
     "publish:package": "node scripts/publish.js",
     "fetch:openapi": "tsx scripts/fetch-openapi.ts",
@@ -50,19 +50,10 @@
     "@tanstack/config": "^0.16.2",
     "@types/crypto-js": "^4.2.2",
     "@types/node-fetch": "^2.6.12",
-    "@typescript-eslint/eslint-plugin": "^8.24.1",
-    "@typescript-eslint/parser": "^8.24.1",
     "dotenv": "^16.4.7",
-    "eslint": "^9.20.1",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-import-x": "^4.6.1",
-    "eslint-plugin-prettier": "^5.2.3",
-    "eslint-plugin-unicorn": "^57.0.0",
     "node-fetch": "^3.3.2",
-    "prettier": "^3.5.1",
     "tsup": "^8.3.6",
-    "tsx": "^4.19.3",
-    "typescript": "^5.5.3"
+    "tsx": "^4.19.3"
   },
   "exports": {
     ".": {

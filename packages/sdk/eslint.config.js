@@ -1,56 +1,31 @@
 import tseslint from 'typescript-eslint'
+import baseConfig from '../../eslint.config.js'
 
 export default tseslint.config(
+  ...baseConfig,
   {
+    // Source files
     files: ['src/**/*.ts'],
-    extends: [tseslint.configs.recommended],
-    plugins: {
-      'import-x': (await import('eslint-plugin-import-x')).default,
-    },
+    ignores: ['src/api/*.gen.ts'],
     languageOptions: {
       parserOptions: {
         project: './tsconfig.json',
       },
     },
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+    },
     rules: {
-      // Import sorting rules
-      'import-x/order': [
-        'error',
-        {
-          groups: [
-            'builtin',
-            'external',
-            'internal',
-            'parent',
-            'sibling',
-            'index',
-            'object',
-            'type',
-          ],
-          pathGroups: [
-            {
-              pattern: '@/**',
-              group: 'internal',
-              position: 'before',
-            },
-          ],
-          'newlines-between': 'always',
-          alphabetize: {
-            order: 'asc',
-            caseInsensitive: true,
-          },
-        },
-      ],
-      // Prettier integration
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/explicit-function-return-type': 'error',
     },
   },
   {
-    ignores: ['node_modules/*', 'dist/*'],
+    // Config files and scripts
+    files: ['*.config.ts', 'scripts/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.eslint.json',
+      },
+    },
   },
 )

@@ -9,11 +9,25 @@ build
 
 # Generated files
 pnpm-lock.yaml
-src/openapi3.yaml
+**/openapi3.yaml
+**/*.gen.ts
+**/*.arc56.json
+**/contracts/*Client.ts
 
 # Coverage reports
 coverage
 
+# Environment files
+.env
+.env.*
+
+# IDE
+.vscode
+.idea
+
 # Misc
 .DS_Store
-*.log 
+*.log
+
+# Package manager
+.npmrc 
