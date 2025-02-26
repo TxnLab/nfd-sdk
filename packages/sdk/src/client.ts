@@ -409,60 +409,106 @@ export class NfdClient {
     const unverifiedCaAlgo: string[] = []
 
     // Process filtered boxes
+    // First, group boxes by their base field name to handle split fields
+    const boxGroups: Record<string, string[]> = {}
+
+    // Group box names by their base field name
     for (const box of filteredBoxes) {
       const boxName = box.name
       if (boxName.startsWith('u.') || boxName.startsWith('v.')) {
-        const value = await instanceClient.appClient.getBoxValue(box.nameRaw)
-        if (value) {
-          if (boxName.startsWith('u.')) {
-            const propertyName = boxName.slice(2)
-            const propertyValue = new TextDecoder('utf-8').decode(value)
-            userDefined[propertyName] = propertyValue
+        // Check if this is a split field (has _XX suffix)
+        const splitMatch = boxName.match(/^([uv]\.[^_]+)_(\d{2})$/)
 
-            // Extract unverified Algorand addresses
-            if (propertyName === 'caalgo') {
-              // Split comma-separated addresses and filter out empty strings
-              const addresses = propertyValue
-                .split(',')
-                .map((addr) => addr.trim())
-                .filter(Boolean)
-              unverifiedCaAlgo.push(...addresses)
-            }
-          } else if (boxName === 'v.caAlgo.0.as') {
-            // For verified caAlgo, the value contains concatenated 32-byte public keys
+        if (splitMatch) {
+          // This is a split field, group it by base name
+          const baseName = splitMatch[1]
+          const index = parseInt(splitMatch[2])
+
+          if (!boxGroups[baseName]) {
+            boxGroups[baseName] = []
+          }
+          // Store the box name at the correct index
+          boxGroups[baseName][index] = boxName
+        } else {
+          // Regular field (not split), add it as a single-item array
+          boxGroups[boxName] = [boxName]
+        }
+      }
+    }
+
+    // Process each group of boxes
+    for (const [baseFieldName, boxNames] of Object.entries(boxGroups)) {
+      // Sort the box names to ensure correct order (important for split fields)
+      boxNames.sort()
+
+      let value = new Uint8Array(0)
+
+      // Fetch and combine values from all boxes in this group
+      for (const boxName of boxNames) {
+        if (!boxName) continue // Skip undefined entries
+
+        const box = filteredBoxes.find((b) => b.name === boxName)
+        if (!box) continue
+
+        const boxValue = await instanceClient.appClient.getBoxValue(box.nameRaw)
+        if (!boxValue) continue
+
+        // Concatenate the value
+        const newCombined = new Uint8Array(value.length + boxValue.length)
+        newCombined.set(value)
+        newCombined.set(boxValue, value.length)
+        value = newCombined
+      }
+
+      if (value.length === 0) continue
+
+      // Process the combined value based on field type
+      if (baseFieldName === 'v.caAlgo.0.as') {
+        // For verified caAlgo, the value contains concatenated 32-byte public keys
+        try {
+          // Each Algorand address public key is 32 bytes
+          const PUBLIC_KEY_LENGTH = 32
+
+          // Split the value into chunks of 32 bytes
+          for (let i = 0; i < value.length; i += PUBLIC_KEY_LENGTH) {
+            const publicKey = value.slice(i, i + PUBLIC_KEY_LENGTH)
             try {
-              // Each Algorand address public key is 32 bytes
-              const PUBLIC_KEY_LENGTH = 32
-
-              // Split the value into chunks of 32 bytes
-              for (let i = 0; i < value.length; i += PUBLIC_KEY_LENGTH) {
-                const publicKey = value.slice(i, i + PUBLIC_KEY_LENGTH)
-                try {
-                  const address = new Address(publicKey).toString()
-                  if (address) {
-                    caAlgo.push(address)
-                  }
-                } catch (error) {
-                  console.error(
-                    'Failed to parse Algorand address from caAlgo box at offset',
-                    i,
-                    ':',
-                    error,
-                  )
-                }
+              const address = new Address(publicKey).toString()
+              if (address) {
+                caAlgo.push(address)
               }
             } catch (error) {
               console.error(
-                'Failed to parse Algorand addresses from box:',
+                'Failed to parse Algorand address from caAlgo box at offset',
+                i,
+                ':',
                 error,
               )
             }
-          } else {
-            const propertyName = boxName.slice(2)
-            const propertyValue = new TextDecoder('utf-8').decode(value)
-            verified[propertyName] = propertyValue
           }
+        } catch (error) {
+          console.error('Failed to parse Algorand addresses from box:', error)
         }
+      } else if (baseFieldName.startsWith('u.')) {
+        // User-defined field
+        const propertyName = baseFieldName.slice(2) // Remove 'u.'
+        const propertyValue = new TextDecoder('utf-8').decode(value)
+        userDefined[propertyName] = propertyValue
+
+        // Extract unverified Algorand addresses
+        if (propertyName === 'caalgo') {
+          // Split comma-separated addresses and filter out empty strings
+          const addresses = propertyValue
+            .split(',')
+            .map((addr) => addr.trim())
+            .filter(Boolean)
+          unverifiedCaAlgo.push(...addresses)
+        }
+      } else if (baseFieldName.startsWith('v.')) {
+        // Verified field
+        const propertyName = baseFieldName.slice(2) // Remove 'v.'
+        const propertyValue = new TextDecoder('utf-8').decode(value)
+        verified[propertyName] = propertyValue
       }
     }
 
