@@ -9,10 +9,7 @@
     "lint": "pnpm -r lint",
     "format": "pnpm -r format",
     "clean": "pnpm -r clean",
-    "publish:packages": "pnpm -r publish:package",
-    "fetch:openapi": "pnpm -F @txnlab/nfd-sdk fetch:openapi",
-    "fetch:arc56": "pnpm -F @txnlab/nfd-sdk fetch:arc56",
-    "fetch:specs": "pnpm -F @txnlab/nfd-sdk fetch:specs"
+    "publish:packages": "pnpm -r publish:package"
   },
   "keywords": [
     "algorand",
