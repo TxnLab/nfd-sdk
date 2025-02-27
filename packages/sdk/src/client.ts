@@ -1,4 +1,5 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
 import { Address, decodeUint64, TransactionSigner } from 'algosdk'
 import crypto from 'crypto-js'
@@ -102,6 +103,7 @@ export class NfdClient {
   private readonly _algorand: AlgorandClient
   private readonly _registryId: bigint
   private readonly _defaultSender: string
+  private _signer: TransactionSignerAccount | null = null
 
   constructor(config: NfdClientConfig = {}) {
     this._algorand = config.algorand ?? AlgorandClient.mainNet()
@@ -139,12 +141,16 @@ export class NfdClient {
   }
 
   /**
-   * Set the default signer for subsequent transactions
-   * @param signer - The transaction signer
-   * @returns The NfdClient instance for chaining
+   * Tracks the given signer against the given sender for later signing.
+   * @param sender - The sender address to use this signer for
+   * @param signer - The signer to sign transactions with for the given sender
+   * @returns The `NfdClient` instance so method calls can be chained
    */
-  setSigner(signer: TransactionSigner): NfdClient {
-    this._algorand.setDefaultSigner(signer)
+  setSigner(sender: string | Address, signer: TransactionSigner): NfdClient {
+    this._algorand.setSigner(sender, signer)
+    const addr =
+      typeof sender === 'string' ? Address.fromString(sender) : sender
+    this._signer = { addr, signer }
     return this
   }
 

@@ -66,11 +66,15 @@ export function App() {
     setIsMinting(true)
 
     try {
+      if (!activeAddress) {
+        throw new Error('No active address')
+      }
+
       /**
        * Mint the NFD using the quote data
        */
       const mintedNfd = await nfd
-        .setSigner(transactionSigner)
+        .setSigner(activeAddress, transactionSigner)
         .mint(quote.nfdName, {
           buyer: quote.buyer,
           years: quote.years,
