@@ -6,8 +6,9 @@ import crypto from 'crypto-js'
 import { resolveFromApi, reverseLookupFromApi, searchFromApi } from './api'
 import { NfdInstanceClient } from './contracts/NFDInstanceClient'
 import { NfdRegistryClient } from './contracts/NFDRegistryClient'
+import { canMintSegment } from './utils'
 
-import type { Constraints } from './contracts/NFDRegistryClient'
+import type { Constraints, PriceInfo } from './contracts/NFDRegistryClient'
 import type {
   Nfd,
   ResolveOptions,
@@ -20,6 +21,12 @@ import type { AppState } from '@algorandfoundation/algokit-utils/types/app'
 export enum NfdRegistryId {
   MAINNET = 760937186,
   TESTNET = 84366825,
+}
+
+/** The default sender addresses (fee sinks) for each network */
+export enum DefaultSender {
+  MAINNET = 'Y76M3MSY6DKBRHBL7C3NNDXGS5IIMQVQVUAB6MP4XEMMGVF2QWNPL226CA',
+  TESTNET = 'A7NMWS3NT3IUDMLVO26ULGXGIIOUQ3ND2TXSER6EBGRZNOBOUIQXHIBGDE',
 }
 
 /**
@@ -52,11 +59,49 @@ export interface NfdMintParams {
 }
 
 /**
+ * Configuration options for getting an NFD price quote
+ */
+export interface NfdMintQuoteParams {
+  /**
+   * The address of the potential buyer
+   */
+  buyer: string
+
+  /**
+   * Number of years to get a quote for (default: 1)
+   */
+  years?: number
+}
+
+/**
+ * Detailed price quote for minting an NFD
+ */
+export interface NfdMintQuote {
+  /** Base price for the specified years in microAlgos */
+  basePrice: bigint
+  /** Fixed carry cost in microAlgos */
+  carryCost: bigint
+  /** Extra fee for minting in microAlgos */
+  extraFee: bigint
+  /** Total price including all fees in microAlgos */
+  totalPrice: bigint
+  /** Number of years the quote is for */
+  years: number
+  /** The NFD name being quoted */
+  nfdName: string
+  /** The address of the buyer */
+  buyer: string
+  /** Whether the NFD is a segment */
+  isSegment: boolean
+}
+
+/**
  * Client for interacting with NFDs (Non-Fungible Domains) through both the API and smart contracts
  */
 export class NfdClient {
   private readonly _algorand: AlgorandClient
   private readonly _registryId: bigint
+  private readonly _defaultSender: string
 
   constructor(config: NfdClientConfig = {}) {
     this._algorand = config.algorand ?? AlgorandClient.mainNet()
@@ -64,6 +109,11 @@ export class NfdClient {
       typeof config.registryId === 'number'
         ? BigInt(config.registryId)
         : (config.registryId ?? BigInt(NfdRegistryId.MAINNET))
+
+    this._defaultSender =
+      this._registryId === BigInt(NfdRegistryId.TESTNET)
+        ? DefaultSender.TESTNET
+        : DefaultSender.MAINNET
   }
 
   /**
@@ -270,7 +320,7 @@ export class NfdClient {
       }
 
       // Add segment status tags
-      if (this.isValidSegment(name)) {
+      if (this.isSegmentName(name)) {
         tags.push('segment')
       } else if (segmentCount === 0) {
         tags.push('pristine')
@@ -294,12 +344,26 @@ export class NfdClient {
    * Check if name is a valid NFD segment
    * @internal
    */
-  private isValidSegment(name: string): boolean {
+  private isSegmentName(name: string): boolean {
     return /^[a-z0-9]{1,27}\.(?<basename>[a-z0-9]{1,27})\.algo$/g.test(name)
   }
 
   /**
-   * Get the basename of an NFD (e.g., for 'xxx.yyy.algo' returns 'yyy')
+   * Extract the parent NFD name from a segment NFD name
+   * @internal
+   * @param segmentName - The segment NFD name (e.g., "xxx.yyy.algo")
+   * @returns The parent NFD name (e.g., "yyy.algo")
+   * @throws If the segment name is invalid
+   */
+  private extractParentName(segmentName: string): string {
+    if (!this.isSegmentName(segmentName)) {
+      throw new Error(`Invalid segment name: ${segmentName}`)
+    }
+    return segmentName.split('.')[1] + '.algo'
+  }
+
+  /**
+   * Get the basename of an NFD (e.g., for "xxx.yyy.algo" returns "yyy")
    * @internal
    */
   private getNfdBasename(name: string): string {
@@ -350,6 +414,209 @@ export class NfdClient {
     } catch (error) {
       console.error(`Failed to parse address for key ${key}:`, error)
       return ''
+    }
+  }
+
+  /**
+   * Validate segment minting permissions
+   * @internal
+   * @param segmentName - The segment NFD name to validate
+   * @param caller - The address of the caller/potential buyer
+   * @throws If the segment name is invalid, the parent NFD does not exist, or the caller is not authorized to mint a segment
+   */
+  private async validateSegmentMinting(
+    segmentName: string,
+    caller: string,
+  ): Promise<void> {
+    // Extract the parent NFD name from the segment name (throws if invalid)
+    const parentName = this.extractParentName(segmentName)
+
+    try {
+      // Resolve the parent NFD to check its properties
+      const parentNfd = await this.resolve(parentName)
+
+      // Check if the caller is authorized to mint a segment
+      if (!canMintSegment(parentNfd, caller)) {
+        throw new Error(
+          `Cannot mint segment '${segmentName}' due to permission restrictions on the parent NFD '${parentName}'. ` +
+            `Only the owner can mint segments when segment minting is locked.`,
+        )
+      }
+    } catch (error) {
+      // If the error is that the parent NFD doesn't exist
+      if (error instanceof Error && error.message.includes('NFD not found')) {
+        throw new Error(
+          `Cannot mint segment '${segmentName}' because its parent NFD '${parentName}' does not exist. ` +
+            `A segment NFD (xxx.yyy.algo) can only be minted if its parent NFD (yyy.algo) already exists. ` +
+            `Please mint the parent NFD first.`,
+        )
+      }
+      // Re-throw other errors
+      throw error
+    }
+  }
+
+  /**
+   * Get price information for an NFD from the registry contract
+   * @internal
+   * @param nfdName - The name of the NFD to get a price for
+   * @param caller - The address of the caller/potential buyer
+   * @returns The NFD price information
+   * @throws If the price information cannot be retrieved
+   */
+  private async getPriceInfo(
+    nfdName: string,
+    caller: string,
+  ): Promise<PriceInfo> {
+    // Validate NFD name format
+    if (!this.isValidName(nfdName)) {
+      throw new Error(
+        `Invalid NFD name: ${nfdName}. Name must be in the format "xxx.algo" or "xxx.yyy.algo"`,
+      )
+    }
+
+    // If the NFD is a segment, validate minting permissions
+    if (this.isSegmentName(nfdName)) {
+      await this.validateSegmentMinting(nfdName, caller)
+    }
+
+    // Get the registry client for executing the price query
+    const registryClient = this.getRegistryClient(caller)
+
+    // Get price quote for the NFD
+    const result = await registryClient
+      .newGroup()
+      .gas({ args: {} })
+      .getPrice({ args: { nfdName, caller } })
+      .simulate({
+        skipSignatures: true,
+        allowUnnamedResources: true,
+        extraOpcodeBudget: 2100,
+      })
+
+    // Check for simulation failure
+    const failureMessage = result.simulateResponse.txnGroups[0].failureMessage
+    if (failureMessage) {
+      throw new Error(`Failed to get price: ${failureMessage}`)
+    }
+
+    const priceInfo = result.returns[1]
+    if (!priceInfo) {
+      throw new Error('Failed to get price: Price info not returned')
+    }
+
+    return priceInfo
+  }
+
+  /**
+   * Get the protocol constraints from the NFD registry
+   * @internal
+   * @returns The protocol constraints
+   * @throws If an error occurs while fetching the constraints
+   */
+  private async getConstraints(): Promise<Constraints> {
+    const registryClient = this.getRegistryClient(this._defaultSender)
+
+    try {
+      const result = await registryClient.newGroup().getConstraints().simulate({
+        skipSignatures: true,
+        allowUnnamedResources: true,
+      })
+
+      if (!result.returns) {
+        throw new Error('No data returned')
+      }
+
+      const constraints = result.returns[0]
+      if (!constraints) {
+        throw new Error('No constraints returned')
+      }
+
+      return constraints
+    } catch (error) {
+      throw new Error(
+        `Failed to get protocol constraints: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  /**
+   * Get a price quote for minting an NFD
+   * @param nfdName - The name of the NFD to get a quote for
+   * @param params - Parameters for the quote
+   * @returns A detailed price quote including base price, fees, and total
+   * @throws If the quote cannot be generated
+   */
+  async getMintQuote(
+    nfdName: string,
+    params: NfdMintQuoteParams,
+  ): Promise<NfdMintQuote> {
+    const { buyer, years = 1 } = params
+
+    // Validate NFD name format
+    if (!this.isValidName(nfdName)) {
+      throw new Error(
+        `Invalid NFD name: ${nfdName}. Name must be in the format "xxx.algo" or "xxx.yyy.algo"`,
+      )
+    }
+
+    // Check if NFD already exists
+    const existingAppId = await this.getAppIdFromName(nfdName)
+    if (existingAppId !== null) {
+      throw new Error(
+        `NFD already exists: ${nfdName} (appID: ${existingAppId})`,
+      )
+    }
+
+    // Get constraints to determine max years allowed
+    let maxYearsAllowed = 20 // Default fallback
+    try {
+      const constraints = await this.getConstraints()
+      maxYearsAllowed = Number(constraints.maxYearsAllowed)
+    } catch (error) {
+      console.warn('Failed to get constraints, using default max years:', error)
+    }
+
+    // Validate years parameter
+    if (years <= 0 || !Number.isInteger(years)) {
+      throw new Error('Years must be a positive integer')
+    }
+
+    if (years > maxYearsAllowed) {
+      throw new Error(
+        `Years cannot exceed the maximum allowed (${maxYearsAllowed})`,
+      )
+    }
+
+    // Determine if the NFD is a segment
+    const isSegment = this.isSegmentName(nfdName)
+
+    // If the NFD is a segment, validate minting permissions
+    if (isSegment) {
+      await this.validateSegmentMinting(nfdName, buyer)
+    }
+
+    // Get the price info from the registry
+    const priceInfo = await this.getPriceInfo(nfdName, buyer)
+
+    // Calculate extra fee based on NFD type
+    const extraFee = isSegment ? BigInt(12000) : BigInt(10000)
+
+    // Calculate base price for the specified number of years
+    const basePrice = priceInfo.oneYearPrice * BigInt(years)
+
+    // Calculate total price including all components
+    const totalPrice = basePrice + priceInfo.carryCost + extraFee
+
+    return {
+      basePrice,
+      carryCost: priceInfo.carryCost,
+      extraFee,
+      totalPrice,
+      years,
+      nfdName,
+      buyer,
+      isSegment,
     }
   }
 
@@ -643,39 +910,6 @@ export class NfdClient {
   }
 
   /**
-   * Get the protocol constraints from the NFD registry
-   * @returns The protocol constraints
-   * @throws If an error occurs while fetching the constraints
-   * @internal
-   */
-  private async getConstraints(): Promise<Constraints> {
-    const registryClient = this.getRegistryClient()
-
-    try {
-      const result = await registryClient.newGroup().getConstraints().simulate({
-        skipSignatures: true,
-        allowUnnamedResources: true,
-      })
-
-      if (!result.returns) {
-        throw new Error('No data returned')
-      }
-
-      const constraints = result.returns[0]
-
-      if (!constraints) {
-        throw new Error('No constraints returned')
-      }
-
-      return constraints
-    } catch (error) {
-      throw new Error(
-        `Failed to get protocol constraints: ${error instanceof Error ? error.message : String(error)}`,
-      )
-    }
-  }
-
-  /**
    * Mint a new NFD
    * @param nfdName - The name of the NFD to mint
    * @param params - Configuration options for minting
@@ -700,72 +934,54 @@ export class NfdClient {
 
     const { buyer: buyerAddr, years: numYears } = params
 
-    // Validate years parameter against protocol constraints
+    // Validate years parameter
+    if (numYears <= 0) {
+      throw new Error('Years must be greater than 0')
+    }
+
+    if (!Number.isInteger(numYears)) {
+      throw new Error('Years must be an integer')
+    }
+
+    // Get constraints to determine max years allowed
+    let maxYearsAllowed = 20 // Default fallback
     try {
       const constraints = await this.getConstraints()
-      const maxYearsAllowed = Number(constraints.maxYearsAllowed)
-
-      if (numYears <= 0) {
-        throw new Error('Years must be greater than 0')
-      }
-
-      if (!Number.isInteger(numYears)) {
-        throw new Error('Years must be an integer')
-      }
-
-      if (numYears > maxYearsAllowed) {
-        throw new Error(
-          `Years cannot exceed the maximum allowed (${maxYearsAllowed})`,
-        )
-      }
+      maxYearsAllowed = Number(constraints.maxYearsAllowed)
     } catch (error) {
-      if (error instanceof Error && error.message.startsWith('Years')) {
-        throw error
-      }
-      // If we can't get constraints, fall back to a reasonable default validation
-      if (numYears <= 0 || numYears > 20 || !Number.isInteger(numYears)) {
-        throw new Error('Years must be an integer between 1 and 20')
-      }
+      console.warn('Failed to get constraints, using default max years:', error)
     }
+
+    if (numYears > maxYearsAllowed) {
+      throw new Error(
+        `Years cannot exceed the maximum allowed (${maxYearsAllowed})`,
+      )
+    }
+
+    // Determine if the NFD is a segment
+    const isSegment = this.isSegmentName(nfdName)
+
+    // If the NFD is a segment, validate minting permissions
+    if (isSegment) {
+      await this.validateSegmentMinting(nfdName, buyerAddr)
+    }
+
+    // Get price info from the registry
+    const priceInfo = await this.getPriceInfo(nfdName, buyerAddr)
+
+    // Calculate extra fee based on NFD type
+    const extraFee = isSegment ? 12000 : 10000
 
     // Get the registry client for executing the mint transaction
     const registryClient = this.getRegistryClient(buyerAddr)
-
-    // Get price quote for the NFD
-    const priceInfo = await registryClient
-      .newGroup()
-      .gas({ args: {} })
-      .getPrice({ args: { nfdName, caller: buyerAddr } })
-      .simulate({
-        skipSignatures: true,
-        allowUnnamedResources: true,
-        extraOpcodeBudget: 2100,
-      })
-
-    // Check for simulation failure
-    const failureMessage =
-      priceInfo.simulateResponse.txnGroups[0].failureMessage
-    if (failureMessage) {
-      throw new Error(`Failed to get price: ${failureMessage}`)
-    }
-
-    if (!priceInfo.returns[1]) {
-      throw new Error('Failed to get price: Price info not returned')
-    }
-
-    const { oneYearPrice, carryCost } = priceInfo.returns[1]
-
-    // Calculate extra fee based on NFD type
-    const isSegment = this.isValidSegment(nfdName)
-    const extraFee = isSegment ? 12000 : 10000
 
     // Create payment transaction for the NFD price
     const paymentTxn = await this._algorand.createTransaction.payment({
       sender: buyerAddr,
       receiver: registryClient.appAddress,
-      // Calculate total cost: (years * yearly price) + carry cost + extra MBR if linking
+      // Calculate total cost: (years * yearly price) + carry cost
       amount: AlgoAmount.MicroAlgos(
-        BigInt(numYears) * oneYearPrice + carryCost,
+        BigInt(numYears) * priceInfo.oneYearPrice + priceInfo.carryCost,
       ),
     })
 

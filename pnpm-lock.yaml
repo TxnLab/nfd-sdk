@@ -56,9 +56,6 @@ importers:
       '@txnlab/nfd-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
-      buffer:
-        specifier: ^6.0.3
-        version: 6.0.3
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -84,6 +81,9 @@ importers:
 
   examples/with-use-wallet:
     dependencies:
+      '@algorandfoundation/algokit-utils':
+        specifier: 8.0.0
+        version: 8.0.0(algosdk@3.2.0)
       '@txnlab/nfd-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
@@ -93,9 +93,6 @@ importers:
       algosdk:
         specifier: ^3.2.0
         version: 3.2.0
-      buffer:
-        specifier: ^6.0.3
-        version: 6.0.3
       lute-connect:
         specifier: ^1.4.1
         version: 1.4.1
