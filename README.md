@@ -1,4 +1,4 @@
-# NFDomains SDK Monorepo
+# NFDomains SDK
 
 This monorepo contains the NFDomains SDK and related packages for interacting with the NFDomains (NFD) API and Algorand blockchain.
 
