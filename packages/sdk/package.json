@@ -20,7 +20,6 @@
     "fetch:arc56": "tsx scripts/fetch-arc56.ts",
     "fetch:specs": "pnpm fetch:openapi && pnpm fetch:arc56",
     "generate:clients": "algokit generate client src/contracts/ --language typescript --output src/contracts/{contract_name}Client.ts",
-    "postgenerate:clients": "node scripts/fix-imports.js",
     "generate:openapi": "openapi-ts",
     "generate": "pnpm fetch:specs && pnpm generate:clients && pnpm generate:openapi"
   },
