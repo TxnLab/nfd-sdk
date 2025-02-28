@@ -12,7 +12,10 @@
   ],
   "scripts": {
     "build": "vite build && publint --strict",
-    "test": "jest",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
     "format": "prettier --write .",
     "publish:package": "node scripts/publish.js",
@@ -50,13 +53,16 @@
     "@tanstack/config": "^0.16.2",
     "@types/crypto-js": "^4.2.2",
     "@types/node-fetch": "^2.6.12",
+    "@vitest/coverage-v8": "^3.0.7",
+    "@vitest/ui": "^3.0.7",
     "dotenv": "^16.4.7",
     "node-fetch": "^3.3.2",
     "publint": "^0.3.6",
     "tsx": "^4.19.3",
     "vite": "^6.2.0",
     "vite-plugin-dts": "^4.5.0",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.0.7"
   },
   "exports": {
     ".": {
