@@ -1,8 +1,27 @@
-export { NfdClient, NfdRegistryId } from './client'
+export { NfdClient, type NfdClientConfig } from './client'
+export { NfdRegistryId } from './constants'
 
+// Export module types
 export type {
-  NfdClientConfig,
   NfdMintQuoteParams,
   NfdMintQuote,
-} from './client'
-export type { Nfd, ResolveOptions, ReverseLookupOptions } from './types'
+  NfdMintParams,
+} from './modules/minting'
+
+// Export core types
+export type {
+  Nfd,
+  ResolveOptions,
+  ReverseLookupOptions,
+  SearchOptions,
+} from './types'
+
+// Export utility functions
+export {
+  isValidName,
+  isSegmentName,
+  extractParentName,
+  getNfdBasename,
+  isSegmentMintingUnlocked,
+  canMintSegment,
+} from './utils/nfd'
