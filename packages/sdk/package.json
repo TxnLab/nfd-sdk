@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "description": "SDK for interacting with NFDomains (NFD) API and Algorand blockchain",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
   "files": [
     "dist",
     "README.md"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "vite build && publint --strict",
     "test": "jest",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
     "format": "prettier --write .",
@@ -53,18 +53,21 @@
     "@types/node-fetch": "^2.6.12",
     "dotenv": "^16.4.7",
     "node-fetch": "^3.3.2",
-    "tsup": "^8.3.6",
-    "tsx": "^4.19.3"
+    "publint": "^0.3.6",
+    "tsx": "^4.19.3",
+    "vite": "^6.2.0",
+    "vite-plugin-dts": "^4.5.0",
+    "vite-tsconfig-paths": "^5.1.4"
   },
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/esm/index.js"
       },
       "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
+        "types": "./dist/types/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
       }
     },
     "./package.json": "./package.json"
