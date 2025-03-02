@@ -43,12 +43,12 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         { argsIgnorePattern: '^_' },
       ],
     },
   },
   {
-    ignores: ['**/node_modules/*', '**/dist/*'],
+    ignores: ['**/node_modules/*', '**/dist/*', '**/coverage/*'],
   },
 )

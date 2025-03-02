@@ -46,6 +46,9 @@ jobs:
       - name: Lint
         run: pnpm -F @txnlab/nfd-sdk lint
 
+      - name: Type Check
+        run: pnpm -F @txnlab/nfd-sdk typecheck
+
       - name: Test
         run: pnpm -F @txnlab/nfd-sdk test
 
