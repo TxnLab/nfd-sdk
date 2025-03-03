@@ -1,5 +1,5 @@
 {
-  "name": "@txnlab/nfd-sdk-react-example",
+  "name": "@txnlab/nfd-sdk-resolve-example",
   "private": true,
   "type": "module",
   "scripts": {

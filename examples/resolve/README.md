@@ -1,4 +1,4 @@
-# NFD SDK React Example
+# NFD SDK Resolve Example
 
 A simple React application demonstrating how to use the NFD SDK to resolve NFD (Non-Fungible Domain) names and application IDs.
 
@@ -19,3 +19,7 @@ pnpm dev
 ```
 
 Visit `http://localhost:5173` in your browser to try the example.
+
+## SDK Functions Demonstrated
+
+This example demonstrates the use of the `resolve` method from the NFD SDK, which allows you to look up NFD data directly from the blockchain.
