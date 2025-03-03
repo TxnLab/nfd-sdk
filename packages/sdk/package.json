@@ -1,32 +1,28 @@
 {
   "name": "@txnlab/nfd-sdk",
   "version": "0.1.0",
-  "description": "SDK for interacting with NFDomains (NFD) API and Algorand blockchain",
+  "description": "JS SDK for interacting with NFDomains (NFD) directly on-chain and via API",
   "type": "module",
   "main": "dist/cjs/index.cjs",
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/types/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist",
     "README.md"
   ],
-  "scripts": {
-    "build": "vite build && publint --strict",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
-    "format": "prettier --write .",
-    "typecheck": "tsc --noEmit",
-    "publish:package": "node scripts/publish.js",
-    "fetch:openapi": "tsx scripts/fetch-openapi.ts",
-    "fetch:arc56": "tsx scripts/fetch-arc56.ts",
-    "fetch:specs": "pnpm fetch:openapi && pnpm fetch:arc56",
-    "generate:clients": "algokit generate client src/contracts/ --language typescript --output src/contracts/{contract_name}Client.ts",
-    "generate:openapi": "openapi-ts",
-    "generate": "pnpm fetch:specs && pnpm generate:clients && pnpm generate:openapi"
-  },
   "keywords": [
     "algorand",
     "nfd",
@@ -48,6 +44,33 @@
   "publishConfig": {
     "access": "public"
   },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "build": "vite build && publint --strict",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "publish:package": "node scripts/publish.js",
+    "fetch:openapi": "tsx scripts/fetch-openapi.ts",
+    "fetch:arc56": "tsx scripts/fetch-arc56.ts",
+    "fetch:specs": "pnpm fetch:openapi && pnpm fetch:arc56",
+    "generate:clients": "algokit generate client src/contracts/ --language typescript --output src/contracts/{contract_name}Client.ts",
+    "generate:openapi": "openapi-ts",
+    "generate": "pnpm fetch:specs && pnpm generate:clients && pnpm generate:openapi"
+  },
+  "dependencies": {
+    "@algorandfoundation/algokit-utils": "^8.2.2",
+    "@hey-api/client-fetch": "^0.8.1",
+    "algosdk": "^3.2.0",
+    "crypto-js": "^4.2.0"
+  },
   "devDependencies": {
     "@algorandfoundation/algokit-client-generator": "^4.0.8",
     "@hey-api/openapi-ts": "^0.64.5",
@@ -64,24 +87,5 @@
     "vite-plugin-dts": "^4.5.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.7"
-  },
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/types/index.d.cts",
-        "default": "./dist/cjs/index.cjs"
-      }
-    },
-    "./package.json": "./package.json"
-  },
-  "dependencies": {
-    "@algorandfoundation/algokit-utils": "^8.2.2",
-    "@hey-api/client-fetch": "^0.8.1",
-    "algosdk": "^3.2.0",
-    "crypto-js": "^4.2.0"
   }
 }

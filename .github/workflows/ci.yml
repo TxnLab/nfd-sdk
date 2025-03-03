@@ -23,7 +23,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9.9.0
+          version: 9
           run_install: false
 
       - name: Get pnpm store directory
@@ -44,20 +44,13 @@ jobs:
         run: pnpm install
 
       - name: Lint
-        run: pnpm -F @txnlab/nfd-sdk lint
+        run: pnpm lint
 
       - name: Type Check
-        run: pnpm -F @txnlab/nfd-sdk typecheck
+        run: pnpm typecheck
 
       - name: Test
-        run: pnpm -F @txnlab/nfd-sdk test
+        run: pnpm test
 
       - name: Build
-        run: pnpm -F @txnlab/nfd-sdk build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: nfd-sdk-build
-          path: packages/sdk/dist
-          retention-days: 7
+        run: pnpm build
