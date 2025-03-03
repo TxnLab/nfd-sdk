@@ -1,8 +1,8 @@
 # NFDomains SDK
 
-This monorepo contains the NFDomains SDK and related packages for interacting with the NFDomains (NFD) API and Algorand blockchain.
+This monorepo contains the NFDomains SDK for direct on-chain interaction with NFDomains (NFD) on the Algorand blockchain, as well as integration with the NFD API for some operations (e.g. batch lookups and searches). The repository also includes example projects demonstrating its usage.
 
-## Packages
+## Package
 
 - [@txnlab/nfd-sdk](./packages/sdk) - Core SDK package for NFDomains
 
