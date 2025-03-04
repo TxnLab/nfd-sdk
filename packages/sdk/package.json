@@ -57,7 +57,6 @@
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "publish:package": "node scripts/publish.js",
     "fetch:openapi": "tsx scripts/fetch-openapi.ts",
     "fetch:arc56": "tsx scripts/fetch-arc56.ts",
     "fetch:specs": "pnpm fetch:openapi && pnpm fetch:arc56",

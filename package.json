@@ -10,7 +10,7 @@
     "lint": "pnpm -r lint",
     "format": "pnpm -r format",
     "typecheck": "pnpm --filter @txnlab/nfd-sdk typecheck",
-    "publish:packages": "pnpm --filter @txnlab/nfd-sdk publish:package"
+    "cipublish": "node scripts/publish.js"
   },
   "keywords": [
     "algorand",
@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@tanstack/config": "^0.16.2",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
     "@typescript-eslint/parser": "^8.24.1",
     "eslint": "^9.21.0",
@@ -49,5 +50,10 @@
     "globals": "^14.0.0",
     "prettier": "^3.5.1",
     "typescript": "^5.5.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@txnlab/nfd-sdk": "workspace:*"
+    }
   }
 }

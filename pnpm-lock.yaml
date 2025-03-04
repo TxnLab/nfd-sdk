@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@txnlab/nfd-sdk': workspace:*
+
 importers:
 
   .:
@@ -11,6 +14,9 @@ importers:
       '@eslint/js':
         specifier: ^9.21.0
         version: 9.21.0
+      '@tanstack/config':
+        specifier: ^0.16.2
+        version: 0.16.3(@types/node@22.13.5)(esbuild@0.25.0)(eslint@9.21.0(jiti@2.4.2))(rollup@4.34.8)(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.5)(jiti@2.4.2)(tsx@4.19.3)(yaml@2.7.0))
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.24.1
         version: 8.25.0(@typescript-eslint/parser@8.25.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3))(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3)

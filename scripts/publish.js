@@ -3,13 +3,15 @@ import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const pkgRoot = resolve(__dirname, '..')
-const rootDir = resolve(pkgRoot, '..', '..')
+const rootDir = resolve(__dirname, '..')
 
 const config = {
-  // Single package configuration
-  packages: [pkgRoot],
-  // Default branch configuration
+  packages: [
+    {
+      name: '@txnlab/nfd-sdk',
+      packageDir: 'packages/sdk',
+    },
+  ],
   branchConfigs: {
     main: {
       prerelease: false,
@@ -27,16 +29,11 @@ const config = {
   rootDir,
 }
 
-publish({
+await publish({
   ...config,
   branch: process.env.BRANCH,
   tag: process.env.TAG,
   ghToken: process.env.GH_TOKEN,
 })
-  .then(() => {
-    console.log('Successfully published package!')
-  })
-  .catch((error) => {
-    console.error('Failed to publish package:', error)
-    process.exit(1)
-  })
+
+process.exit(0)
