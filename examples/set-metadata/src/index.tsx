@@ -12,7 +12,7 @@ const walletManager = new WalletManager({
   wallets: [
     {
       id: WalletId.LUTE,
-      options: { siteName: 'NFD SDK Mint Example' },
+      options: { siteName: 'NFD SDK Set Metadata Example' },
     },
   ],
   defaultNetwork: 'testnet',
