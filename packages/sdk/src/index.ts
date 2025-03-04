@@ -8,6 +8,8 @@ export type {
   NfdMintParams,
 } from './modules/minting'
 
+export { NfdManager } from './modules/manager'
+
 // Export core types
 export type {
   Nfd,
@@ -25,3 +27,6 @@ export {
   isSegmentMintingUnlocked,
   canMintSegment,
 } from './utils/nfd'
+
+// Export error handling utilities
+export { parseTransactionError, withErrorParsing } from './utils/error-parser'

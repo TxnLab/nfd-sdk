@@ -57,6 +57,46 @@ importers:
         specifier: ^5.5.3
         version: 5.7.3
 
+  examples/link-address:
+    dependencies:
+      '@algorandfoundation/algokit-utils':
+        specifier: ^8.2.2
+        version: 8.2.2(algosdk@3.2.0)
+      '@txnlab/nfd-sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      '@txnlab/use-wallet-react':
+        specifier: ^4.0.0
+        version: 4.0.0(algosdk@3.2.0)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      algosdk:
+        specifier: ^3.2.0
+        version: 3.2.0
+      lute-connect:
+        specifier: ^1.4.1
+        version: 1.4.1
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.2.64
+        version: 18.3.18
+      '@types/react-dom':
+        specifier: ^18.2.21
+        version: 18.3.5(@types/react@18.3.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.3.4(vite@4.5.9(@types/node@22.13.5))
+      vite:
+        specifier: ^4.5.2
+        version: 4.5.9(@types/node@22.13.5)
+      vite-plugin-node-polyfills:
+        specifier: ^0.23.0
+        version: 0.23.0(rollup@4.34.8)(vite@4.5.9(@types/node@22.13.5))
+
   examples/mint:
     dependencies:
       '@algorandfoundation/algokit-utils':
@@ -102,6 +142,46 @@ importers:
       '@txnlab/nfd-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.2.64
+        version: 18.3.18
+      '@types/react-dom':
+        specifier: ^18.2.21
+        version: 18.3.5(@types/react@18.3.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.3.4(vite@4.5.9(@types/node@22.13.5))
+      vite:
+        specifier: ^4.5.2
+        version: 4.5.9(@types/node@22.13.5)
+      vite-plugin-node-polyfills:
+        specifier: ^0.23.0
+        version: 0.23.0(rollup@4.34.8)(vite@4.5.9(@types/node@22.13.5))
+
+  examples/set-metadata:
+    dependencies:
+      '@algorandfoundation/algokit-utils':
+        specifier: ^8.2.2
+        version: 8.2.2(algosdk@3.2.0)
+      '@txnlab/nfd-sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      '@txnlab/use-wallet-react':
+        specifier: ^4.0.0
+        version: 4.0.0(algosdk@3.2.0)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      algosdk:
+        specifier: ^3.2.0
+        version: 3.2.0
+      lute-connect:
+        specifier: ^1.4.1
+        version: 1.4.1
       react:
         specifier: ^18.2.0
         version: 18.3.1

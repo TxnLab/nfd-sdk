@@ -5,6 +5,7 @@ import { Address, TransactionSigner } from 'algosdk'
 import { NfdApiClient } from './api-client'
 import { NfdRegistryId } from './constants'
 import { LookupModule } from './modules/lookup'
+import { NfdManager } from './modules/manager'
 import {
   MintingModule,
   NfdMintParams,
@@ -120,6 +121,15 @@ export class NfdClient {
       typeof sender === 'string' ? Address.fromString(sender) : sender
     this._signer = { addr, signer }
     return this
+  }
+
+  /**
+   * Create a manager for a specific NFD
+   * @param nameOrAppId - The NFD name or application ID to manage
+   * @returns An NFD manager instance
+   */
+  public manage(nameOrAppId: string | number | bigint): NfdManager {
+    return new NfdManager(this, nameOrAppId)
   }
 
   /**
