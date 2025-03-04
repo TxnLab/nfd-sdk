@@ -25,3 +25,6 @@ export {
   isSegmentMintingUnlocked,
   canMintSegment,
 } from './utils/nfd'
+
+// Export error handling utilities
+export { parseTransactionError, withErrorParsing } from './utils/error-parser'
