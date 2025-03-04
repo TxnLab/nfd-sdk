@@ -1,0 +1,27 @@
+{
+  "name": "@txnlab/nfd-sdk-link-address-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@algorandfoundation/algokit-utils": "^8.2.2",
+    "@txnlab/nfd-sdk": "^0.1.0",
+    "@txnlab/use-wallet-react": "^4.0.0",
+    "algosdk": "^3.2.0",
+    "lute-connect": "^1.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.64",
+    "@types/react-dom": "^18.2.21",
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^4.5.2",
+    "vite-plugin-node-polyfills": "^0.23.0"
+  }
+}
