@@ -1,18 +1,17 @@
-name: Publish Package
+name: Pull Request
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Override release tag (e.g., v0.1.0)'
-        required: false
-  push:
-    branches: ['main', 'alpha', 'beta', 'next']
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  publish:
-    name: Test & Publish
-    if: github.repository == 'TxnLab/nfd-sdk'
+  test:
+    name: Lint, Test, and Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,7 +23,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
@@ -60,14 +58,3 @@ jobs:
 
       - name: Build
         run: pnpm build
-
-      - name: Publish
-        run: |
-          git config --global user.name 'Doug Richar'
-          git config --global user.email 'drichar@gmail.com'
-          npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-          pnpm cipublish
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          TAG: ${{ inputs.tag }}
