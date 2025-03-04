@@ -2,8 +2,7 @@ import { client } from './api/client.gen'
 import { nfdGetLookup, nfdGetNfd, nfdSearchV2 } from './api/sdk.gen'
 import { NfdApiBaseUrl, NfdRegistryId } from './constants'
 
-import type { NfdRecord } from './api/types.gen'
-import type { SearchOptions } from './types'
+import type { Nfd, SearchOptions, SearchResponse } from './types'
 
 /**
  * Client for interacting with the NFD API
@@ -74,15 +73,13 @@ export class NfdApiClient {
     options: {
       view?: 'tiny' | 'brief' | 'full'
       poll?: boolean
-      nocache?: boolean
     } = {},
-  ): Promise<NfdRecord> {
+  ): Promise<Nfd> {
     const response = await nfdGetNfd({
       client: this._client,
       query: {
         view: options.view,
         poll: options.poll,
-        nocache: options.nocache,
       },
       path: {
         nameOrID: nameOrId,
@@ -90,7 +87,7 @@ export class NfdApiClient {
       throwOnError: true,
     })
 
-    return response.data as NfdRecord
+    return response.data as Nfd
   }
 
   /**
@@ -102,7 +99,7 @@ export class NfdApiClient {
       view?: 'tiny' | 'thumbnail' | 'brief' | 'full'
       allowUnverified?: boolean
     } = {},
-  ): Promise<Record<string, NfdRecord>> {
+  ): Promise<Record<string, Nfd>> {
     const response = await nfdGetLookup({
       client: this._client,
       query: {
@@ -113,15 +110,13 @@ export class NfdApiClient {
       throwOnError: true,
     })
 
-    return response.data as Record<string, NfdRecord>
+    return response.data as Record<string, Nfd>
   }
 
   /**
    * Search for NFDs using the API
    */
-  public async search(
-    options: SearchOptions = {},
-  ): Promise<{ nfds: NfdRecord[]; total: number }> {
+  public async search(options: SearchOptions = {}): Promise<SearchResponse> {
     const response = await nfdSearchV2({
       client: this._client,
       query: {

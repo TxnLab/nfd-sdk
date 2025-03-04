@@ -1,4 +1,4 @@
-import type { NfdRecord } from './api/types.gen'
+import type { NfdRecord, NfdSearchV2Response } from './api/types.gen'
 
 /**
  * Configuration options for resolving an NFD
@@ -208,6 +208,13 @@ export interface SearchOptions {
    * @default 'brief'
    */
   view?: 'tiny' | 'thumbnail' | 'brief' | 'full'
+}
+
+/**
+ * Search response
+ */
+export type SearchResponse = Omit<NfdSearchV2Response, 'match-check'> & {
+  nfds: Nfd[]
 }
 
 /**
