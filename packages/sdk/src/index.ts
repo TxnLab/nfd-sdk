@@ -8,6 +8,8 @@ export type {
   NfdMintParams,
 } from './modules/minting'
 
+export { NfdManager } from './modules/manager'
+
 // Export core types
 export type {
   Nfd,
