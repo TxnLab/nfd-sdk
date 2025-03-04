@@ -74,7 +74,7 @@ export class NfdManager extends BaseModule {
    * @returns The updated NFD
    * @throws If the address cannot be linked
    */
-  async linkAddress(address: string): Promise<Nfd> {
+  public async linkAddress(address: string): Promise<Nfd> {
     this.requireSigner()
     const nfd = await this.getNfd()
 
@@ -191,7 +191,7 @@ export class NfdManager extends BaseModule {
    * @returns The updated NFD
    * @throws If the address cannot be unlinked
    */
-  async unlinkAddress(address: string): Promise<Nfd> {
+  public async unlinkAddress(address: string): Promise<Nfd> {
     this.requireSigner()
     const nfd = await this.getNfd()
 
@@ -244,7 +244,7 @@ export class NfdManager extends BaseModule {
    * @returns The updated NFD
    * @throws If the metadata cannot be set
    */
-  async setMetadata(metadata: Record<string, string>): Promise<Nfd> {
+  public async setMetadata(metadata: Record<string, string>): Promise<Nfd> {
     this.requireSigner()
     const nfd = await this.getNfd()
 
