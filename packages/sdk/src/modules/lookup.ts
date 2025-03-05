@@ -1,7 +1,8 @@
 import { Address } from 'algosdk'
 
-import { determineNfdState, generateMetaTags, isValidName } from '../utils/nfd'
-import { parseAddress, parseString, parseUint64 } from '../utils/state'
+import { determineNfdState, generateMetaTags } from '../utils/internal/nfd'
+import { parseAddress, parseString, parseUint64 } from '../utils/internal/state'
+import { isValidName } from '../utils/nfd'
 
 import { BaseModule } from './base'
 

@@ -1,27 +1,125 @@
 # NFD SDK Utilities
 
-## Error Parser
+The NFD SDK provides utility functions to help developers work with NFDs and handle errors when interacting with the Algorand blockchain.
 
-The error parser utility provides user-friendly error messages for common Algorand transaction errors. It helps developers and users understand what went wrong when a transaction fails, without having to decipher the complex error messages returned by the Algorand blockchain.
+## Importing Utilities
 
-### Usage
+All public utility functions can be imported directly from the main package:
 
 ```typescript
-import { parseTransactionError, withErrorParsing } from '@txnlab/nfd-sdk'
+import {
+  // NFD utilities
+  isValidName,
+  isSegmentName,
+  extractParentName,
+  getNfdBasename,
+  isSegmentMintingUnlocked,
+  canMintSegment,
 
-// Basic usage
+  // Error handling utilities
+  parseTransactionError,
+  withErrorParsing,
+} from '@txnlab/nfd-sdk'
+```
+
+## NFD Utilities
+
+### `isValidName(name: string): boolean`
+
+Checks if a string is a valid NFD name according to the naming rules.
+
+```typescript
+import { isValidName } from '@txnlab/nfd-sdk'
+
+// Check if a name is valid
+const isValid = isValidName('alice.algo')
+// Returns true
+```
+
+### `isSegmentName(name: string): boolean`
+
+Determines if a name is a segment NFD. A segment is a child NFD that is created under a parent NFD (e.g., 'sub.alice.algo' is a segment of 'alice.algo'). Segments are sovereign NFDs with all functionality once minted.
+
+```typescript
+import { isSegmentName } from '@txnlab/nfd-sdk'
+
+// Check if a name is a segment
+const isSegment = isSegmentName('sub.alice.algo')
+// Returns true
+```
+
+### `extractParentName(segmentName: string): string`
+
+Extracts the parent name from a segment name.
+
+```typescript
+import { extractParentName } from '@txnlab/nfd-sdk'
+
+// Get the parent name
+const parentName = extractParentName('sub.alice.algo')
+// Returns 'alice.algo'
+```
+
+### `getNfdBasename(name: string): string`
+
+Gets the base name of an NFD (without the .algo extension).
+
+```typescript
+import { getNfdBasename } from '@txnlab/nfd-sdk'
+
+// Get the base name
+const baseName = getNfdBasename('alice.algo')
+// Returns 'alice'
+```
+
+### `isSegmentMintingUnlocked(nfd: Nfd | null): boolean`
+
+Checks if segment minting is unlocked for a parent/root NFD. This determines whether anyone besides the owner can mint segments under this NFD. Note that the owner of the parent NFD always has permission to mint segments regardless of this setting.
+
+```typescript
+import { isSegmentMintingUnlocked } from '@txnlab/nfd-sdk'
+
+// Check if segment minting is unlocked for a parent NFD
+const isUnlocked = isSegmentMintingUnlocked(parentNfd)
+```
+
+### `canMintSegment(nfd: Nfd | null, callerAddress: string): boolean`
+
+Checks if the caller is authorized to mint a segment for the given parent NFD.
+
+```typescript
+import { canMintSegment } from '@txnlab/nfd-sdk'
+
+// Check if the caller can mint a segment
+const canMint = canMintSegment(parentNfd, userAddress)
+```
+
+## Error Handling Utilities
+
+### `parseTransactionError(error: unknown): string`
+
+Parses an error message and returns a user-friendly version.
+
+```typescript
+import { parseTransactionError } from '@txnlab/nfd-sdk'
+
+// Parse an error to get a user-friendly message
 try {
-  // Some operation that might throw an error
   await nfd.setSigner(addr, signer).manage(nfdName).linkAddress(address)
 } catch (error) {
-  // Parse the error to get a user-friendly message
   const friendlyError = parseTransactionError(error)
   console.error(friendlyError)
 }
+```
 
-// Using the wrapper function
+### `withErrorParsing<T>(fn: () => Promise<T>): Promise<T>`
+
+A wrapper function that automatically parses errors thrown by the wrapped function.
+
+```typescript
+import { withErrorParsing } from '@txnlab/nfd-sdk'
+
 const safeFunction = withErrorParsing(async () => {
-  // Some operation that might throw an error
   return await nfd.setSigner(addr, signer).manage(nfdName).linkAddress(address)
 })
 

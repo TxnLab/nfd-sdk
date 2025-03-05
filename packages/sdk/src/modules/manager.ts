@@ -1,7 +1,7 @@
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
 
-import { strToUint8Array, concatUint8Arrays } from '../utils/bytes'
 import { parseTransactionError } from '../utils/error-parser'
+import { strToUint8Array, concatUint8Arrays } from '../utils/internal/bytes'
 
 import { BaseModule } from './base'
 

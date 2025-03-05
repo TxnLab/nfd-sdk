@@ -1,14 +1,16 @@
 import { describe, it, expect } from 'vitest'
 
 import {
+  determineNfdState,
+  generateMetaTags,
+} from '../../src/utils/internal/nfd'
+import {
   isSegmentMintingUnlocked,
   canMintSegment,
   isValidName,
   isSegmentName,
   extractParentName,
   getNfdBasename,
-  determineNfdState,
-  generateMetaTags,
 } from '../../src/utils/nfd'
 
 // Create a minimal mock of the Nfd type for testing
