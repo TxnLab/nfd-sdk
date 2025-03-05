@@ -2,6 +2,16 @@
 
 This monorepo contains the NFDomains SDK for direct on-chain interaction with NFDomains (NFD) on the Algorand blockchain, as well as integration with the NFD API for some operations (e.g. batch lookups and searches). The repository also includes example projects demonstrating its usage.
 
+## Versioning
+
+This SDK is in early development (pre-1.0.0) and may introduce breaking changes despite our best efforts to avoid them. We recommend pinning the version in your package.json:
+
+```json
+"@txnlab/nfd-sdk": "0.1.2"  // instead of "@txnlab/nfd-sdk": "^0.1.2"
+```
+
+Once we reach v1.0.0 with all planned features, breaking changes will only be introduced via major version bumps following semantic versioning.
+
 ## Installation
 
 ```bash
@@ -72,7 +82,10 @@ import { NfdClient } from '@txnlab/nfd-sdk'
 const nfd = NfdClient.testNet()
 
 // Get a price quote for minting an NFD
-const quote = await nfd.getMintQuote('example.algo', 5)
+const quote = await nfd.getMintQuote('example.algo', {
+  buyer: 'ALGORAND_ADDRESS',
+  years: 5,
+})
 
 // Mint the NFD using the quote
 const mintedNfd = await nfd

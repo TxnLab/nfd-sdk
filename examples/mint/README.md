@@ -38,7 +38,10 @@ import { NfdClient } from '@txnlab/nfd-sdk'
 const nfd = NfdClient.testNet()
 
 // Get a price quote for minting an NFD
-const quote = await nfd.getMintQuote('example.algo', 5)
+const quote = await nfd.getMintQuote('example.algo', {
+  buyer: 'ALGORAND_ADDRESS',
+  years: 5,
+})
 
 // Mint the NFD using the quote
 const mintedNfd = await nfd
