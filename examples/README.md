@@ -6,6 +6,7 @@ This directory contains example applications demonstrating various features of t
 
 - [Resolve](./resolve/): Demonstrates how to resolve NFD names and application IDs
 - [API Search](./api-search/): Demonstrates how to use the API client to search for NFDs
+- [Reverse Lookup](./reverse-lookup/): Demonstrates how to look up NFDs by wallet address
 - [Mint](./mint/): Demonstrates how to mint NFDs
 - [Link Address](./link-address/): Demonstrates how to link addresses to NFDs
 - [Set Metadata](./set-metadata/): Demonstrates how to set metadata for NFDs
