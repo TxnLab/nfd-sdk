@@ -1,40 +1,159 @@
-# @txnlab/nfd-sdk
+# NFDomains SDK
 
 SDK for interacting with NFDomains (NFD) API and Algorand blockchain. This package provides methods for domain resolution, record fetching, minting, and address linking operations.
+
+## Versioning
+
+This SDK is in early development (pre-1.0.0) and may introduce breaking changes despite our best efforts to avoid them. We recommend pinning the version in your package.json:
+
+```json
+{
+  "dependencies": {
+    "@txnlab/nfd-sdk": "0.1.2"
+  }
+}
+```
+
+Instead of using caret versioning:
+
+```json
+{
+  "dependencies": {
+    "@txnlab/nfd-sdk": "^0.1.2"
+  }
+}
+```
+
+Once we reach v1.0.0 with all planned features, breaking changes will only be introduced via major version bumps following semantic versioning.
 
 ## Installation
 
 ```bash
+# npm
 npm install @txnlab/nfd-sdk
-# or
+
+# yarn
 yarn add @txnlab/nfd-sdk
-# or
+
+# pnpm
 pnpm add @txnlab/nfd-sdk
 ```
 
-## Basic Usage
+## Quick Start
 
 ```typescript
-import { NFDClient } from '@txnlab/nfd-sdk'
+import { NfdClient } from '@txnlab/nfd-sdk'
 
-const client = new NFDClient()
-// More examples coming soon...
+// Create a client instance (MainNet by default)
+const nfd = new NfdClient()
+
+// Resolve an NFD by name
+const nfdData = await nfd.resolve('alice.algo')
+console.log(nfdData)
 ```
 
-## Development
+## Usage Examples
 
-```bash
-# Install dependencies
-pnpm install
+### Resolving an NFD
 
-# Build
-pnpm build
+```typescript
+import { NfdClient } from '@txnlab/nfd-sdk'
 
-# Run tests
-pnpm test
+// Create a client instance for TestNet
+const nfd = NfdClient.testNet()
 
-# Format code
-pnpm format
+// Resolve an NFD by name with 'brief' view
+const nfdData = await nfd.resolve('alice.algo', { view: 'brief' })
+
+// Resolve an NFD by application ID
+const nfdDataById = await nfd.resolve('123456789')
+```
+
+### Searching for NFDs
+
+```typescript
+import { NfdClient } from '@txnlab/nfd-sdk'
+
+const nfd = NfdClient.testNet()
+
+// Search for NFDs containing 'foo' in their name
+const searchResults = await nfd.api.search({ substring: 'foo', limit: 10 })
+
+// Search with multiple filters
+const filteredResults = await nfd.api.search({
+  category: ['premium'],
+  state: ['owned'],
+  limit: 20,
+  offset: 0,
+})
+```
+
+### Minting an NFD
+
+```typescript
+import { NfdClient } from '@txnlab/nfd-sdk'
+
+const nfd = NfdClient.testNet()
+
+// Get a price quote for minting an NFD
+const quote = await nfd.getMintQuote('example.algo', {
+  buyer: 'ALGORAND_ADDRESS',
+  years: 5,
+})
+
+// Mint the NFD using the quote
+const mintedNfd = await nfd
+  .setSigner(activeAddress, transactionSigner)
+  .mint(quote.nfdName, {
+    buyer: quote.buyer,
+    years: quote.years,
+  })
+```
+
+### Managing an NFD
+
+```typescript
+import { NfdClient } from '@txnlab/nfd-sdk'
+
+const nfd = NfdClient.testNet()
+
+// Link an address to an NFD
+const updatedNfd = await nfd
+  .setSigner(activeAddress, transactionSigner)
+  .manage('example.algo')
+  .linkAddress('ALGORAND_ADDRESS_TO_LINK')
+
+// Set metadata for an NFD
+const updatedNfd2 = await nfd
+  .setSigner(activeAddress, transactionSigner)
+  .manage('example.algo')
+  .setMetadata({
+    website: 'https://example.com',
+    twitter: '@example',
+  })
+```
+
+## Client Initialization Options
+
+The NFD client can be instantiated in several ways:
+
+```typescript
+// Default constructor (MainNet)
+const nfd = new NfdClient()
+
+// Using static methods
+const mainNetNfd = NfdClient.mainNet() // define MainNet explicitly
+const testNetNfd = NfdClient.testNet() // define TestNet explicitly
+
+// Using custom AlgorandClient and explicit NFD registry ID
+import { NfdClient, NfdRegistryId } from '@txnlab/nfd-sdk'
+import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+
+const algorand = AlgorandClient.mainNet()
+const customNfd = new NfdClient({
+  algorand,
+  registryId: NfdRegistryId.MAINNET,
+})
 ```
 
 ## License
