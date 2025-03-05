@@ -25,7 +25,30 @@ Visit `http://localhost:5173` in your browser to try the example.
 
 This example specifically demonstrates the `reverseLookup` method from the NFD SDK's API client, which allows you to find all NFDs owned by a specific wallet address. The API client does not require a wallet connection, making it ideal for read-only operations.
 
-## About the NFD API Client
+## Basic Code Example
+
+```typescript
+import { NfdClient } from '@txnlab/nfd-sdk'
+
+// Create a client instance for TestNet
+const nfd = NfdClient.testNet()
+
+// Look up NFDs owned by a single address
+const lookupResults = await nfd.api.reverseLookup(['ALGORAND_ADDRESS'])
+
+// Look up NFDs owned by multiple addresses
+const multiAddressResults = await nfd.api.reverseLookup([
+  'ALGORAND_ADDRESS_1',
+  'ALGORAND_ADDRESS_2',
+])
+
+// Allow unverified addresses (if only match)
+const verifiedResults = await nfd.api.reverseLookup(['ALGORAND_ADDRESS'], {
+  allowUnverified: true,
+})
+```
+
+## About the NFD SDK
 
 The `NfdApiClient` provides several methods for interacting with the NFD API:
 
