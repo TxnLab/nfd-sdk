@@ -1,7 +1,11 @@
 import { AppState } from '@algorandfoundation/algokit-utils/types/app'
 import { describe, it, expect, vi } from 'vitest'
 
-import { parseString, parseUint64, parseAddress } from '../../src/utils/state'
+import {
+  parseString,
+  parseUint64,
+  parseAddress,
+} from '../../src/utils/internal/state'
 
 // Mock the algosdk decodeUint64 function
 vi.mock('algosdk', () => ({

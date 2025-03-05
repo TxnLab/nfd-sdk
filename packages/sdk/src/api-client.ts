@@ -1,7 +1,7 @@
 import { client } from './api/client.gen'
 import { nfdGetLookup, nfdGetNfd, nfdSearchV2 } from './api/sdk.gen'
 import { NfdApiBaseUrl, NfdRegistryId } from './constants'
-import { chunkArray } from './utils/array'
+import { chunkArray } from './utils/internal/array'
 
 import type { Nfd, SearchOptions, SearchResponse } from './types'
 
