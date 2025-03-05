@@ -7,7 +7,21 @@ This monorepo contains the NFDomains SDK for direct on-chain interaction with NF
 This SDK is in early development (pre-1.0.0) and may introduce breaking changes despite our best efforts to avoid them. We recommend pinning the version in your package.json:
 
 ```json
-"@txnlab/nfd-sdk": "0.1.2"  // instead of "@txnlab/nfd-sdk": "^0.1.2"
+{
+  "dependencies": {
+    "@txnlab/nfd-sdk": "0.1.2"
+  }
+}
+```
+
+Instead of using caret versioning:
+
+```json
+{
+  "dependencies": {
+    "@txnlab/nfd-sdk": "^0.1.2"
+  }
+}
 ```
 
 Once we reach v1.0.0 with all planned features, breaking changes will only be introduced via major version bumps following semantic versioning.
