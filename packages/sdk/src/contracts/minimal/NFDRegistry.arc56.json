@@ -1,0 +1,1609 @@
+{
+  "name": "NFDRegistry",
+  "desc": "",
+  "methods": [
+    {
+      "name": "updateApplication",
+      "args": [],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "UpdateApplication"
+        ]
+      }
+    },
+    {
+      "name": "gas",
+      "args": [],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "getPrice",
+      "desc": "Returns the price for a given NFD (single year), the max # of years allowed (Name for Display),\nand extra algo required to cover MBR when purchasing.",
+      "args": [
+        {
+          "name": "nfdName",
+          "type": "string",
+          "desc": "The NFD name for which to retrieve the price."
+        },
+        {
+          "name": "caller",
+          "type": "address",
+          "desc": "the address this request is on behalf of (since an nfd contract might call us it\nneeds to be able to pass on the request on behalf of ITS caller - ie: getting price for an expired nfd will be\ndifferent if its owner ir asking.\n PriceInfo Type containing the price, carry cost, etc."
+        }
+      ],
+      "returns": {
+        "type": "(uint64,uint64,bool,bool,bool)",
+        "struct": "PriceInfo"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "getConstraints",
+      "args": [],
+      "returns": {
+        "type": "(uint64,uint64,uint64,address,uint64,uint64,uint64)",
+        "struct": "Constraints"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "getNfdMbrCost",
+      "desc": "Returns the MBR amounts needed to MINT an nfd.\nThis value needs to be added to purchase price in mintNfd call.\ngetPrice() returns it though.",
+      "args": [
+        {
+          "name": "nfdName",
+          "type": "string"
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "getNfdLinkOnMintExtraMbrCost",
+      "args": [
+        {
+          "name": "address",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "(uint64,uint64)",
+        "struct": "LinkOnMintExtraMbrCosts"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "mintNfd",
+      "desc": "Mint an NFD (NFT) and create a new NFD instance.",
+      "args": [
+        {
+          "name": "purchaseTxn",
+          "type": "pay",
+          "desc": "The payment transaction covering the purchase amount of the nfd"
+        },
+        {
+          "name": "nfdName",
+          "type": "string",
+          "desc": "The name of the NFD to mint"
+        },
+        {
+          "name": "reservedFor",
+          "type": "address",
+          "desc": "The address that will own the NFD once minted (so you can buy for someone else)"
+        },
+        {
+          "name": "linkOnMint",
+          "type": "bool",
+          "desc": "whether to auto-link the address (reserved for MUST MATCH payer!) at mint\n uint64 - The ID of the newly created NFD instance."
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      },
+      "events": [
+        {
+          "name": "nfdRegistry_minted",
+          "args": [
+            {
+              "name": "appId",
+              "type": "uint64"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "priceOneYear",
+              "type": "uint64"
+            },
+            {
+              "name": "paidAmount",
+              "type": "uint64"
+            },
+            {
+              "name": "carryCost",
+              "type": "uint64"
+            },
+            {
+              "name": "seller",
+              "type": "address"
+            },
+            {
+              "name": "buyer",
+              "type": "address"
+            },
+            {
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "name": "expTime",
+              "type": "uint64"
+            },
+            {
+              "name": "amountToSeller",
+              "type": "uint64"
+            },
+            {
+              "name": "commissionAddress",
+              "type": "address"
+            },
+            {
+              "name": "amountToCommission",
+              "type": "uint64"
+            },
+            {
+              "name": "segmentRootOwner",
+              "type": "address"
+            },
+            {
+              "name": "amountToSegmentRoot",
+              "type": "uint64"
+            }
+          ],
+          "desc": ""
+        }
+      ],
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "linkNfdAddress",
+      "args": [
+        {
+          "name": "nfdName",
+          "type": "string"
+        },
+        {
+          "name": "nfdAppId",
+          "type": "uint64"
+        },
+        {
+          "name": "addrToVerify",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "unlinkNfdAddress",
+      "args": [
+        {
+          "name": "nfdName",
+          "type": "string"
+        },
+        {
+          "name": "nfdAppId",
+          "type": "uint64"
+        },
+        {
+          "name": "addrToUnlink",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "ownershipAssign",
+      "args": [
+        {
+          "name": "nfdName",
+          "type": "string"
+        },
+        {
+          "name": "nfdAppId",
+          "type": "uint64"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "ownershipChanged",
+      "desc": "This method is triggered when the ownership of an NFD (Non-Fungible Domain) changes.\nIt is called by the NFD via the purchase method.  It can also be called by TxnLab admin for older 3.3\nNFDs when it detects purchased events for 3.3",
+      "args": [
+        {
+          "name": "nfdName",
+          "type": "string",
+          "desc": "The name of the NFD."
+        },
+        {
+          "name": "nfdAppId",
+          "type": "uint64",
+          "desc": "The unique application ID of the NFD."
+        },
+        {
+          "name": "seller",
+          "type": "address",
+          "desc": "The address of the prior owner (seller) of the nfd"
+        },
+        {
+          "name": "buyer",
+          "type": "address",
+          "desc": "The address of the new owner of the NFD."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "setAddressPrimaryNfd",
+      "desc": "Makes the specified NFD the 'first' NFD in the reverse-address set so its the primary NFD for this address.\nThe NFD must be valid, and the sender must be the address (or nfd owner if vault).  The NFD wouldn't already be\nin the reverse-lookup set if it wasn't already valid.",
+      "args": [
+        {
+          "name": "nfdName",
+          "type": "string"
+        },
+        {
+          "name": "nfdAppId",
+          "type": "uint64"
+        },
+        {
+          "name": "addrBeingModified",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "nfdRegistry_addressPrimaryNfdChanged",
+          "args": [
+            {
+              "name": "appId",
+              "type": "uint64"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "address",
+              "type": "address"
+            }
+          ],
+          "desc": ""
+        }
+      ],
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "upgradeNfd",
+      "args": [
+        {
+          "name": "nfdName",
+          "type": "string"
+        }
+      ],
+      "returns": {
+        "type": "string"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "isValidNfdAppId",
+      "args": [
+        {
+          "name": "nfdName",
+          "type": "string"
+        },
+        {
+          "name": "nfdAppId",
+          "type": "uint64"
+        }
+      ],
+      "returns": {
+        "type": "bool"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "getNameAppId",
+      "args": [
+        {
+          "name": "nfdName",
+          "type": "string"
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "getAddressAppIds",
+      "args": [
+        {
+          "name": "lookupAddress",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "uint64[]"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "nfdContractInit",
+      "desc": "Initializes the NFD contract bytecode into the registry",
+      "args": [
+        {
+          "name": "version",
+          "type": "string",
+          "desc": "The version of the contract."
+        },
+        {
+          "name": "size",
+          "type": "uint64",
+          "desc": "exact byte size of contract to load"
+        },
+        {
+          "name": "clearCode",
+          "type": "byte[]",
+          "desc": "bytes of clear code"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "nfdContractLoad",
+      "desc": "Loads contract data into the  box at the specified offset.",
+      "args": [
+        {
+          "name": "version",
+          "type": "string",
+          "desc": "The version of the contract."
+        },
+        {
+          "name": "offset",
+          "type": "uint64",
+          "desc": "The offset at which to replace the contract data within the box."
+        },
+        {
+          "name": "data",
+          "type": "byte[]",
+          "desc": "The contract data to be loaded."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "nfdContractCommit",
+      "desc": "Commit a new version of the contract.",
+      "args": [
+        {
+          "name": "version",
+          "type": "string",
+          "desc": "The version number of the contract to be committed."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "usdInMicroAlgo",
+      "args": [
+        {
+          "name": "usdCost",
+          "type": "uint64"
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "costToAddToAddress",
+      "desc": "Returns the cost to add an NFD to the reverse-lookup data",
+      "args": [
+        {
+          "name": "lookupAddress",
+          "type": "address",
+          "desc": "The address to add the NFD app id to"
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "calcFuturePrice",
+      "desc": "Calculates the future price based on the current price and the number of years.",
+      "args": [
+        {
+          "name": "curPrice",
+          "type": "uint64",
+          "desc": "The current price in USD (in decimals). For example, if the current price is $2.00, the value should be 200."
+        },
+        {
+          "name": "forTime",
+          "type": "uint64",
+          "desc": "The timestamp to calc the future price based on - ie: 1 year past 'go live date' the price would have inflated by 1 year.\n\n\n uint64 The future price calculated based on the current price and the specified number of years."
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      },
+      "actions": {
+        "create": [],
+        "call": [
+          "NoOp"
+        ]
+      }
+    },
+    {
+      "name": "createApplication",
+      "args": [],
+      "returns": {
+        "type": "void"
+      },
+      "actions": {
+        "create": [
+          "NoOp"
+        ],
+        "call": []
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "nfdRegistry_minted",
+      "args": [
+        {
+          "name": "appId",
+          "type": "uint64"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "priceOneYear",
+          "type": "uint64"
+        },
+        {
+          "name": "paidAmount",
+          "type": "uint64"
+        },
+        {
+          "name": "carryCost",
+          "type": "uint64"
+        },
+        {
+          "name": "seller",
+          "type": "address"
+        },
+        {
+          "name": "buyer",
+          "type": "address"
+        },
+        {
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "name": "expTime",
+          "type": "uint64"
+        },
+        {
+          "name": "amountToSeller",
+          "type": "uint64"
+        },
+        {
+          "name": "commissionAddress",
+          "type": "address"
+        },
+        {
+          "name": "amountToCommission",
+          "type": "uint64"
+        },
+        {
+          "name": "segmentRootOwner",
+          "type": "address"
+        },
+        {
+          "name": "amountToSegmentRoot",
+          "type": "uint64"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "nfdRegistry_addressPrimaryNfdChanged",
+      "args": [
+        {
+          "name": "appId",
+          "type": "uint64"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "address",
+          "type": "address"
+        }
+      ],
+      "desc": ""
+    }
+  ],
+  "arcs": [
+    4,
+    56
+  ],
+  "structs": {
+    "PriceInfo": [
+      {
+        "name": "oneYearPrice",
+        "type": "uint64"
+      },
+      {
+        "name": "carryCost",
+        "type": "uint64"
+      },
+      {
+        "name": "exists",
+        "type": "bool"
+      },
+      {
+        "name": "isExpired",
+        "type": "bool"
+      },
+      {
+        "name": "inAuction",
+        "type": "bool"
+      }
+    ],
+    "Constraints": [
+      {
+        "name": "segmentPlatformCostInUsd",
+        "type": "uint64"
+      },
+      {
+        "name": "segmentPlatformCostInAlgo",
+        "type": "uint64"
+      },
+      {
+        "name": "maxYearsAllowed",
+        "type": "uint64"
+      },
+      {
+        "name": "treasuryAddress",
+        "type": "address"
+      },
+      {
+        "name": "expiredAuctionDuration",
+        "type": "uint64"
+      },
+      {
+        "name": "expiredStartingPrice",
+        "type": "uint64"
+      },
+      {
+        "name": "maxMintCarryCost",
+        "type": "uint64"
+      }
+    ],
+    "LinkOnMintExtraMbrCosts": [
+      {
+        "name": "linkingNfdMbrCost",
+        "type": "uint64"
+      },
+      {
+        "name": "linkingRegistryMbrCost",
+        "type": "uint64"
+      }
+    ]
+  },
+  "state": {
+    "schema": {
+      "global": {
+        "bytes": 0,
+        "ints": 0
+      },
+      "local": {
+        "bytes": 16,
+        "ints": 0
+      }
+    },
+    "keys": {
+      "global": {},
+      "local": {},
+      "box": {}
+    },
+    "maps": {
+      "global": {},
+      "local": {
+        "localState": {
+          "keyType": "AVMBytes",
+          "valueType": "AVMBytes"
+        }
+      },
+      "box": {
+        "boxes": {
+          "keyType": "AVMBytes",
+          "valueType": "AVMBytes"
+        }
+      }
+    }
+  },
+  "bareActions": {
+    "create": [],
+    "call": []
+  },
+  "sourceInfo": {
+    "approval": {
+      "sourceInfo": [
+        {
+          "teal": 25,
+          "source": "contracts/NFDRegistry.algo.ts:51",
+          "errorMessage": "The requested action is not implemented in this contract. Are you using the correct OnComplete? Did you set your app ID?",
+          "pc": [
+            35
+          ]
+        },
+        {
+          "teal": 414,
+          "source": "contracts/NFDRegistry.algo.ts:179",
+          "errorMessage": "invalid",
+          "pc": [
+            516
+          ]
+        },
+        {
+          "teal": 510,
+          "source": "contracts/NFDRegistry.algo.ts:198",
+          "errorMessage": "invalid method",
+          "pc": [
+            637
+          ]
+        },
+        {
+          "teal": 514,
+          "source": "contracts/NFDRegistry.algo.ts:200",
+          "errorMessage": "unknown method",
+          "pc": [
+            638
+          ]
+        },
+        {
+          "teal": 542,
+          "source": "contracts/NFDRegistry.algo.ts:216",
+          "errorMessage": "argument 0 (caller) for getPrice must be a address",
+          "pc": [
+            658
+          ]
+        },
+        {
+          "teal": 736,
+          "source": "contracts/NFDRegistry.algo.ts:256",
+          "errorMessage": "argument 0 (address) for getNfdLinkOnMintExtraMbrCost must be a address",
+          "pc": [
+            909
+          ]
+        },
+        {
+          "teal": 780,
+          "source": "contracts/NFDRegistry.algo.ts:272",
+          "errorMessage": "argument 0 (linkOnMint) for mintNfd must be a bool",
+          "pc": [
+            947
+          ]
+        },
+        {
+          "teal": 792,
+          "source": "contracts/NFDRegistry.algo.ts:272",
+          "errorMessage": "argument 1 (reservedFor) for mintNfd must be a address",
+          "pc": [
+            958
+          ]
+        },
+        {
+          "teal": 808,
+          "source": "contracts/NFDRegistry.algo.ts:272",
+          "errorMessage": "argument 3 (purchaseTxn) for mintNfd must be a pay transaction",
+          "pc": [
+            974
+          ]
+        },
+        {
+          "teal": 843,
+          "source": "contracts/NFDRegistry.algo.ts:273",
+          "errorMessage": "transaction verification failed: {\"txn\":\"purchaseTxn\",\"field\":\"receiver\",\"expected\":\"this.app.address\"}",
+          "pc": [
+            996
+          ]
+        },
+        {
+          "teal": 931,
+          "source": "contracts/NFDRegistry.algo.ts:290",
+          "errorMessage": "parent nfd/id must be found",
+          "pc": [
+            1085
+          ]
+        },
+        {
+          "teal": 951,
+          "source": "contracts/NFDRegistry.algo.ts:294",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(parentAppId).globalState(NFD_KEY_SELLER)",
+          "pc": [
+            1114
+          ]
+        },
+        {
+          "teal": 968,
+          "source": "contracts/NFDRegistry.algo.ts:298",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(parentAppId).globalState(NFD_KEY_OWNER)",
+          "pc": [
+            1128
+          ]
+        },
+        {
+          "teal": 972,
+          "source": "contracts/NFDRegistry.algo.ts:297",
+          "errorMessage": "only owner of root can mint segments if segments are locked",
+          "pc": [
+            1130
+          ]
+        },
+        {
+          "teal": 996,
+          "source": "contracts/NFDRegistry.algo.ts:306",
+          "errorMessage": "price can never be 0",
+          "pc": [
+            1154
+          ]
+        },
+        {
+          "teal": 1052,
+          "source": "contracts/NFDRegistry.algo.ts:315",
+          "errorMessage": "if linking on mint, the buyer MUST be who will be the owner (reservedFor)",
+          "pc": [
+            1208
+          ]
+        },
+        {
+          "teal": 1081,
+          "source": "contracts/NFDRegistry.algo.ts:322",
+          "errorMessage": "payment transaction must be at least enough to cover 30 days of nfd cost + carry cost",
+          "pc": [
+            1232
+          ]
+        },
+        {
+          "teal": 1090,
+          "source": "contracts/NFDRegistry.algo.ts:330",
+          "errorMessage": "box value does not exist: this.boxes(REGISTRY_CONTRACT_BOX_CURRENT_CONTRACT).value",
+          "pc": [
+            1236
+          ]
+        },
+        {
+          "teal": 1103,
+          "source": "contracts/NFDRegistry.algo.ts:333",
+          "errorMessage": "box value does not exist: this.boxes(REGISTRY_CONTRACT_BOX_CURRENT_CONTRACT).value",
+          "pc": [
+            1244
+          ]
+        },
+        {
+          "teal": 1115,
+          "source": "contracts/NFDRegistry.algo.ts:335",
+          "errorMessage": "box value does not exist: this.boxes(concat(REGISTRY_CONTRACT_BOX_CLEAR_NAMEPREFIX, currentContractVer)).value",
+          "pc": [
+            1254
+          ]
+        },
+        {
+          "teal": 1124,
+          "source": "contracts/NFDRegistry.algo.ts:336",
+          "errorMessage": "box value does not exist: this.boxes(approvProgName).size",
+          "pc": [
+            1260
+          ]
+        },
+        {
+          "teal": 1470,
+          "source": "contracts/NFDRegistry.algo.ts:425",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(parentAppId).globalState(NFD_KEY_VERSION)",
+          "pc": [
+            1602
+          ]
+        },
+        {
+          "teal": 1475,
+          "source": "contracts/NFDRegistry.algo.ts:424",
+          "errorMessage": "nfd root not 3.x must be version 2.12 in order for segment minting to succeed",
+          "pc": [
+            1610
+          ]
+        },
+        {
+          "teal": 1768,
+          "source": "contracts/NFDRegistry.algo.ts:479",
+          "errorMessage": "argument 0 (addrToVerify) for linkNfdAddress must be a address",
+          "pc": [
+            1967
+          ]
+        },
+        {
+          "teal": 1804,
+          "source": "contracts/NFDRegistry.algo.ts:481",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(nfdAppId).globalState(NFD_KEY_OWNER)",
+          "pc": [
+            1999
+          ]
+        },
+        {
+          "teal": 1814,
+          "source": "contracts/NFDRegistry.algo.ts:483",
+          "errorMessage": "referenced NFD name/id must be valid",
+          "pc": [
+            2009
+          ]
+        },
+        {
+          "teal": 1834,
+          "source": "contracts/NFDRegistry.algo.ts:489",
+          "errorMessage": "verifying vault account, sender must be NFD owner",
+          "pc": [
+            2026
+          ]
+        },
+        {
+          "teal": 1845,
+          "source": "contracts/NFDRegistry.algo.ts:492",
+          "errorMessage": "app call sender must match address being added/removed",
+          "pc": [
+            2035
+          ]
+        },
+        {
+          "teal": 1859,
+          "source": "contracts/NFDRegistry.algo.ts:495",
+          "errorMessage": "nfd verified caAlgo.0.as must contain address being added/removed",
+          "pc": [
+            2045
+          ]
+        },
+        {
+          "teal": 1878,
+          "source": "contracts/NFDRegistry.algo.ts:510",
+          "errorMessage": "should add nfd to reverse address",
+          "pc": [
+            2064
+          ]
+        },
+        {
+          "teal": 1899,
+          "source": "contracts/NFDRegistry.algo.ts:520",
+          "errorMessage": "argument 0 (addrToUnlink) for unlinkNfdAddress must be a address",
+          "pc": [
+            2083
+          ]
+        },
+        {
+          "teal": 1929,
+          "source": "contracts/NFDRegistry.algo.ts:521",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(nfdAppId).globalState(NFD_KEY_OWNER)",
+          "pc": [
+            2108
+          ]
+        },
+        {
+          "teal": 1939,
+          "source": "contracts/NFDRegistry.algo.ts:523",
+          "errorMessage": "referenced NFD name/id must be valid",
+          "pc": [
+            2118
+          ]
+        },
+        {
+          "teal": 1969,
+          "source": "contracts/NFDRegistry.algo.ts:529",
+          "errorMessage": "Sender unlinking must be NFD owner OR address removing itself",
+          "pc": [
+            2148
+          ]
+        },
+        {
+          "teal": 1983,
+          "source": "contracts/NFDRegistry.algo.ts:534",
+          "errorMessage": "nfd verified caAlgo.0.as must contain address being removed",
+          "pc": [
+            2158
+          ]
+        },
+        {
+          "teal": 2085,
+          "source": "contracts/NFDRegistry.algo.ts:558",
+          "errorMessage": "referenced NFD name/id must be valid",
+          "pc": [
+            2257
+          ]
+        },
+        {
+          "teal": 2098,
+          "source": "contracts/NFDRegistry.algo.ts:560",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(nfdAppId).globalState(NFD_KEY_OWNER)",
+          "pc": [
+            2264
+          ]
+        },
+        {
+          "teal": 2128,
+          "source": "contracts/NFDRegistry.algo.ts:579",
+          "errorMessage": "argument 0 (buyer) for ownershipChanged must be a address",
+          "pc": [
+            2291
+          ]
+        },
+        {
+          "teal": 2138,
+          "source": "contracts/NFDRegistry.algo.ts:579",
+          "errorMessage": "argument 1 (seller) for ownershipChanged must be a address",
+          "pc": [
+            2300
+          ]
+        },
+        {
+          "teal": 2191,
+          "source": "contracts/NFDRegistry.algo.ts:583",
+          "errorMessage": "referenced NFD name/id must be valid",
+          "pc": [
+            2337
+          ]
+        },
+        {
+          "teal": 2201,
+          "source": "contracts/NFDRegistry.algo.ts:584",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(nfdAppId).globalState(NFD_KEY_VERSION)",
+          "pc": [
+            2343
+          ]
+        },
+        {
+          "teal": 2216,
+          "source": "contracts/NFDRegistry.algo.ts:586",
+          "errorMessage": "only txnlab can call this method to backfill ownership, 3.4+ handles it by calling from the nfd itself",
+          "pc": [
+            2358
+          ]
+        },
+        {
+          "teal": 2266,
+          "source": "contracts/NFDRegistry.algo.ts:609",
+          "errorMessage": "argument 0 (addrBeingModified) for setAddressPrimaryNfd must be a address",
+          "pc": [
+            2406
+          ]
+        },
+        {
+          "teal": 2302,
+          "source": "contracts/NFDRegistry.algo.ts:610",
+          "errorMessage": "referenced NFD name/id must be valid",
+          "pc": [
+            2433
+          ]
+        },
+        {
+          "teal": 2311,
+          "source": "contracts/NFDRegistry.algo.ts:611",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(nfdAppId).globalState(NFD_KEY_OWNER)",
+          "pc": [
+            2438
+          ]
+        },
+        {
+          "teal": 2332,
+          "source": "contracts/NFDRegistry.algo.ts:617",
+          "errorMessage": "if changing primary nfd for vault account, sender must be NFD owner",
+          "pc": [
+            2457
+          ]
+        },
+        {
+          "teal": 2346,
+          "source": "contracts/NFDRegistry.algo.ts:620",
+          "errorMessage": "app call sender must match address being updated to change primary NFD",
+          "pc": [
+            2466
+          ]
+        },
+        {
+          "teal": 2428,
+          "source": "contracts/NFDRegistry.algo.ts:641",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(nfdAppId).globalState(NFD_KEY_OWNER)",
+          "pc": [
+            2558
+          ]
+        },
+        {
+          "teal": 2438,
+          "source": "contracts/NFDRegistry.algo.ts:642",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(nfdAppId).globalState(NFD_KEY_NAME)",
+          "pc": [
+            2566
+          ]
+        },
+        {
+          "teal": 2459,
+          "source": "contracts/NFDRegistry.algo.ts:643",
+          "errorMessage": "only NFD owner or TxnLab can upgrade NFD",
+          "pc": [
+            2586
+          ]
+        },
+        {
+          "teal": 2476,
+          "source": "contracts/NFDRegistry.algo.ts:652",
+          "errorMessage": "box value does not exist: this.boxes(REGISTRY_CONTRACT_BOX_CURRENT_CONTRACT).value",
+          "pc": [
+            2598
+          ]
+        },
+        {
+          "teal": 2489,
+          "source": "contracts/NFDRegistry.algo.ts:654",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(nfdAppId).globalState(NFD_KEY_VERSION)",
+          "pc": [
+            2606
+          ]
+        },
+        {
+          "teal": 2494,
+          "source": "contracts/NFDRegistry.algo.ts:653",
+          "errorMessage": "contract already at this version",
+          "pc": [
+            2610
+          ]
+        },
+        {
+          "teal": 2506,
+          "source": "contracts/NFDRegistry.algo.ts:659",
+          "errorMessage": "box value does not exist: this.boxes(REGISTRY_CONTRACT_BOX_CURRENT_CONTRACT).value",
+          "pc": [
+            2616
+          ]
+        },
+        {
+          "teal": 2518,
+          "source": "contracts/NFDRegistry.algo.ts:661",
+          "errorMessage": "box value does not exist: this.boxes(concat(REGISTRY_CONTRACT_BOX_CLEAR_NAMEPREFIX, currentContractVer)).value",
+          "pc": [
+            2626
+          ]
+        },
+        {
+          "teal": 2527,
+          "source": "contracts/NFDRegistry.algo.ts:662",
+          "errorMessage": "box value does not exist: this.boxes(approvProgName).size",
+          "pc": [
+            2632
+          ]
+        },
+        {
+          "teal": 2730,
+          "source": "contracts/NFDRegistry.algo.ts:697",
+          "errorMessage": "box value does not exist: this.boxes(boxName).value",
+          "pc": [
+            2809
+          ]
+        },
+        {
+          "teal": 2768,
+          "source": "contracts/NFDRegistry.algo.ts:702",
+          "errorMessage": "argument 0 (lookupAddress) for getAddressAppIds must be a address",
+          "pc": [
+            2837
+          ]
+        },
+        {
+          "teal": 2827,
+          "source": "contracts/NFDRegistry.algo.ts:708",
+          "errorMessage": "box value does not exist: this.boxes(boxName).value",
+          "pc": [
+            2888
+          ]
+        },
+        {
+          "teal": 3056,
+          "source": "contracts/NFDRegistry.algo.ts:758",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(this.algoUsdOracleAppId).globalState('ts')",
+          "pc": [
+            3084
+          ]
+        },
+        {
+          "teal": 3066,
+          "source": "contracts/NFDRegistry.algo.ts:759",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(this.algoUsdOracleAppId).globalState('decimals')",
+          "pc": [
+            3100
+          ]
+        },
+        {
+          "teal": 3076,
+          "source": "contracts/NFDRegistry.algo.ts:760",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(this.algoUsdOracleAppId).globalState('price')",
+          "pc": [
+            3113
+          ]
+        },
+        {
+          "teal": 3141,
+          "source": "contracts/NFDRegistry.algo.ts:777",
+          "errorMessage": "argument 0 (lookupAddress) for costToAddToAddress must be a address",
+          "pc": [
+            3195
+          ]
+        },
+        {
+          "teal": 3383,
+          "source": "contracts/NFDRegistry.algo.ts:847",
+          "errorMessage": "box value does not exist: this.boxes(key).value",
+          "pc": [
+            3429
+          ]
+        },
+        {
+          "teal": 3494,
+          "source": "contracts/NFDRegistry.algo.ts:864",
+          "errorMessage": "box value does not exist: this.boxes(key).value",
+          "pc": [
+            3516
+          ]
+        },
+        {
+          "teal": 3900,
+          "source": "contracts/NFDRegistry.algo.ts:965",
+          "errorMessage": "box value does not exist: this.boxes(boxName).value",
+          "pc": [
+            3918
+          ]
+        },
+        {
+          "teal": 3922,
+          "source": "contracts/NFDRegistry.algo.ts:974",
+          "errorMessage": "must be existing v1 name",
+          "pc": [
+            3935
+          ]
+        },
+        {
+          "teal": 3932,
+          "source": "contracts/NFDRegistry.algo.ts:979",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(btoi(this.txn.applicationArgs![2])).globalState(REGISTRY_KEY_ASAID)",
+          "pc": [
+            3950
+          ]
+        },
+        {
+          "teal": 4106,
+          "source": "contracts/NFDRegistry.algo.ts:1032",
+          "errorMessage": "NFD already exists with this name",
+          "pc": [
+            4102
+          ]
+        },
+        {
+          "teal": 4134,
+          "source": "contracts/NFDRegistry.algo.ts:1038",
+          "errorMessage": "NFD has already been minted!",
+          "pc": [
+            4122
+          ]
+        },
+        {
+          "teal": 4206,
+          "source": "contracts/NFDRegistry.algo.ts:1055",
+          "errorMessage": "box value does not exist: this.boxes(key).value",
+          "pc": [
+            4184
+          ]
+        },
+        {
+          "teal": 4224,
+          "source": "contracts/NFDRegistry.algo.ts:1059",
+          "errorMessage": "int (appid) 'set' should already have at least two values",
+          "pc": [
+            4198
+          ]
+        },
+        {
+          "teal": 4307,
+          "source": "contracts/NFDRegistry.algo.ts:1073",
+          "errorMessage": "int (app id) must be found in set in order to move it",
+          "pc": [
+            4267
+          ]
+        },
+        {
+          "teal": 4363,
+          "source": "contracts/NFDRegistry.algo.ts:1084",
+          "errorMessage": "box value does not exist: this.boxes(key).value",
+          "pc": [
+            4311
+          ]
+        },
+        {
+          "teal": 4742,
+          "source": "contracts/NFDRegistry.algo.ts:1166",
+          "errorMessage": "if not at least 6 chars can't be valid - minimum length to have .algo",
+          "pc": [
+            4637
+          ]
+        },
+        {
+          "teal": 4756,
+          "source": "contracts/NFDRegistry.algo.ts:1167",
+          "errorMessage": "string must end w/ .algo",
+          "pc": [
+            4656
+          ]
+        },
+        {
+          "teal": 4851,
+          "source": "contracts/NFDRegistry.algo.ts:1182",
+          "errorMessage": "must be 1-27 chars in nfd root or segment name",
+          "pc": [
+            4739
+          ]
+        },
+        {
+          "teal": 4895,
+          "source": "contracts/NFDRegistry.algo.ts:1185",
+          "errorMessage": "must be 1-27 chars and at end of string",
+          "pc": [
+            4781
+          ]
+        },
+        {
+          "teal": 4900,
+          "source": "contracts/NFDRegistry.algo.ts:1190",
+          "errorMessage": "too many '.' chars in name",
+          "pc": [
+            4785
+          ]
+        },
+        {
+          "teal": 4949,
+          "source": "contracts/NFDRegistry.algo.ts:1198",
+          "errorMessage": "invalid character in name",
+          "pc": [
+            4836
+          ]
+        },
+        {
+          "teal": 5089,
+          "source": "contracts/NFDRegistry.algo.ts:1219",
+          "errorMessage": "box value does not exist: this.boxes(boxName).value",
+          "pc": [
+            4971
+          ]
+        },
+        {
+          "teal": 5160,
+          "source": "contracts/NFDRegistry.algo.ts:1232",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(appId).globalState(key)",
+          "pc": [
+            5031
+          ]
+        },
+        {
+          "teal": 5192,
+          "source": "contracts/NFDRegistry.algo.ts:1239",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(appId).globalState(key)",
+          "pc": [
+            5054
+          ]
+        },
+        {
+          "teal": 5258,
+          "source": "contracts/NFDRegistry.algo.ts:1272",
+          "errorMessage": "parent nfd/id must be found",
+          "pc": [
+            5095
+          ]
+        },
+        {
+          "teal": 5325,
+          "source": "contracts/NFDRegistry.algo.ts:1287",
+          "errorMessage": "segment mint cost must be at least NFD_MIN_SEGMENT_USD",
+          "pc": [
+            5178
+          ]
+        },
+        {
+          "teal": 5426,
+          "source": "contracts/NFDRegistry.algo.ts:1309",
+          "errorMessage": "invalid cost calc",
+          "pc": [
+            5284
+          ]
+        },
+        {
+          "teal": 5476,
+          "source": "contracts/NFDRegistry.algo.ts:1320",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(nfdAppId).globalState(NFD_KEY_OWNER)",
+          "pc": [
+            5327
+          ]
+        },
+        {
+          "teal": 5633,
+          "source": "contracts/NFDRegistry.algo.ts:1351",
+          "errorMessage": "price always needs to be at least 1 algo",
+          "pc": [
+            5480
+          ]
+        },
+        {
+          "teal": 6086,
+          "source": "contracts/NFDRegistry.algo.ts:1456",
+          "errorMessage": "lsig has to have i.appid localstate",
+          "pc": [
+            5951
+          ]
+        },
+        {
+          "teal": 6159,
+          "source": "contracts/NFDRegistry.algo.ts:1479",
+          "errorMessage": "box value does not exist: this.boxes(boxName).value",
+          "pc": [
+            6024
+          ]
+        },
+        {
+          "teal": 6168,
+          "source": "contracts/NFDRegistry.algo.ts:1480",
+          "errorMessage": "box value does not exist: this.boxes(boxName).size",
+          "pc": [
+            6030
+          ]
+        },
+        {
+          "teal": 6227,
+          "source": "contracts/NFDRegistry.algo.ts:1487",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(nfdAppId).globalState(NFD_KEY_NAME)",
+          "pc": [
+            6076
+          ]
+        },
+        {
+          "teal": 6306,
+          "source": "contracts/NFDRegistry.algo.ts:1505",
+          "errorMessage": "max expiration exceeded parameters defined by registry",
+          "pc": [
+            6138
+          ]
+        },
+        {
+          "teal": 6333,
+          "source": "contracts/NFDRegistry.algo.ts:1513",
+          "errorMessage": "global state value does not exist: AppID.fromUint64(appId).globalState(NFD_KEY_VERSION)",
+          "pc": [
+            6155
+          ]
+        },
+        {
+          "teal": 6364,
+          "source": "contracts/NFDRegistry.algo.ts:51",
+          "errorMessage": "this contract does not implement the given ABI method for create NoOp",
+          "pc": [
+            6198
+          ]
+        }
+      ],
+      "pcOffsetMethod": "cblocks"
+    },
+    "clear": {
+      "sourceInfo": [],
+      "pcOffsetMethod": "none"
+    }
+  },
+  "templateVariables": {
+    "adminAsaId": {
+      "type": "uint64"
+    },
+    "nfdTreasuryAddr": {
+      "type": "address"
+    },
+    "nfdCommission1Addr": {
+      "type": "address"
+    },
+    "nfdCommission1Rate": {
+      "type": "uint64"
+    },
+    "algoUsdOracleAppId": {
+      "type": "uint64"
+    },
+    "developmentAllowShortMints": {
+      "type": "uint64"
+    }
+  },
+  "scratchVariables": {
+    "adminAsaId": {
+      "type": "uint64",
+      "slot": 200
+    },
+    "nfdTreasuryAddr": {
+      "type": "address",
+      "slot": 201
+    },
+    "nfdCommission1Addr": {
+      "type": "address",
+      "slot": 202
+    },
+    "nfdCommission1Rate": {
+      "type": "uint64",
+      "slot": 203
+    },
+    "algoUsdOracleAppId": {
+      "type": "uint64",
+      "slot": 204
+    },
+    "developmentAllowShortMints": {
+      "type": "uint64",
+      "slot": 205
+    }
+  },
+  "compilerInfo": {
+    "compiler": "algod",
+    "compilerVersion": {
+      "major": 3,
+      "minor": 27,
+      "patch": 237217,
+      "commitHash": "0bc3d7e4"
+    }
+  }
+}
