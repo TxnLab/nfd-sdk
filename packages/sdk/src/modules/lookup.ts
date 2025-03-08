@@ -200,6 +200,11 @@ export class LookupModule extends BaseModule {
               )
             }
           }
+
+          // Set the verified.caAlgo property as a comma-delimited string
+          if (caAlgo.length > 0) {
+            verified.caAlgo = caAlgo.join(',')
+          }
         } catch (error) {
           console.error('Failed to parse Algorand addresses from box:', error)
         }
