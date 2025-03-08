@@ -1,4 +1,5 @@
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
+import { Address } from 'algosdk'
 
 import { parseTransactionError } from '../utils/error-parser'
 import { strToUint8Array, concatUint8Arrays } from '../utils/internal/bytes'
@@ -74,14 +75,22 @@ export class NfdManager extends BaseModule {
    * @returns The updated NFD
    * @throws If the address cannot be linked
    */
-  public async linkAddress(address: string): Promise<Nfd> {
-    this.requireSigner()
+  public async linkAddress(address: string | Address): Promise<Nfd> {
+    const signer = this.requireSigner()
     const nfd = await this.getNfd()
 
-    // Ensure the caller is the owner
-    const signer = this.getSigner()
-    if (!signer || signer.addr.toString() !== nfd.owner) {
+    // Ensure the default signer is the owner
+    if (signer.addr.toString() !== nfd.owner) {
       throw new Error('Only the owner can link addresses to this NFD')
+    }
+
+    // Get the Address to link
+    const addressToLink =
+      typeof address === 'string' ? Address.fromString(address) : address
+
+    // If address to link is not the default signer (owner), add a signer for it
+    if (signer.addr !== addressToLink) {
+      this.algorand.setSigner(addressToLink, signer.signer)
     }
 
     // Get the NFD instance client
@@ -89,18 +98,15 @@ export class NfdManager extends BaseModule {
       throw new Error('NFD has no application ID')
     }
     const nfdAppId = BigInt(nfd.appID)
-    const nfdInstanceClient = this.getInstanceClient(
-      nfdAppId,
-      signer.addr.toString(),
-    )
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
 
     // Prepare the fields to update
     const fieldsToUpdate: Uint8Array[] = [
       strToUint8Array('u.cav.algo.a'),
-      signer.addr.publicKey,
+      addressToLink.publicKey,
     ]
 
-    // Get current box value/size in NFD
+    // Get current v.caAlgo.0.as box value/size
     let curCaAlgo: Uint8Array
     try {
       curCaAlgo = await nfdInstanceClient.appClient.getBoxValue('v.caAlgo.0.as')
@@ -113,7 +119,7 @@ export class NfdManager extends BaseModule {
       fieldsToUpdate[0],
       fieldsToUpdate[1],
       strToUint8Array('v.caAlgo.0.as'),
-      concatUint8Arrays(curCaAlgo, signer.addr.publicKey),
+      concatUint8Arrays(curCaAlgo, addressToLink.publicKey),
     ]
 
     // Get the cost of the update
@@ -129,7 +135,7 @@ export class NfdManager extends BaseModule {
 
     // Add payment transaction for the update cost
     const updatePaymentTxn = await this.algorand.createTransaction.payment({
-      sender: signer.addr.toString(),
+      sender: signer.addr,
       receiver: nfdInstanceClient.appAddress,
       amount: AlgoAmount.MicroAlgos(updateCost),
     })
@@ -138,12 +144,12 @@ export class NfdManager extends BaseModule {
     nfdNewGroup.updateFields({ args: { fieldAndVals: fieldsToUpdate } })
 
     // Get the registry client
-    const registryClient = this.getRegistryClient(signer.addr.toString())
+    const registryClient = this.getRegistryClient(signer.addr)
 
     // Get the cost to add to registry
     const regMbrCostResult = await registryClient
       .newGroup()
-      .costToAddToAddress({ args: { lookupAddress: address } })
+      .costToAddToAddress({ args: { lookupAddress: addressToLink.toString() } })
       .simulate({ skipSignatures: true, allowUnnamedResources: true })
 
     const regMbrCost = regMbrCostResult.returns[0] || 0n
@@ -151,7 +157,7 @@ export class NfdManager extends BaseModule {
     // Add payment transaction if needed
     if (regMbrCost > 0n) {
       const regPaymentTxn = await this.algorand.createTransaction.payment({
-        sender: signer.addr.toString(),
+        sender: signer.addr,
         receiver: registryClient.appAddress,
         amount: AlgoAmount.MicroAlgos(regMbrCost),
       })
@@ -165,9 +171,9 @@ export class NfdManager extends BaseModule {
         args: {
           nfdName: nfd.name,
           nfdAppId: nfdInstanceClient.appId,
-          addrToVerify: address,
+          addrToVerify: addressToLink.toString(),
         },
-        sender: signer.addr,
+        sender: addressToLink,
         staticFee: AlgoAmount.MicroAlgos(3000),
       })
 
@@ -191,28 +197,28 @@ export class NfdManager extends BaseModule {
    * @returns The updated NFD
    * @throws If the address cannot be unlinked
    */
-  public async unlinkAddress(address: string): Promise<Nfd> {
-    this.requireSigner()
+  public async unlinkAddress(address: string | Address): Promise<Nfd> {
+    const signer = this.requireSigner()
     const nfd = await this.getNfd()
 
-    // Ensure the caller is the owner
-    const signer = this.getSigner()
-    if (!signer || signer.addr.toString() !== nfd.owner) {
+    // Ensure the default signer is the owner
+    if (signer.addr.toString() !== nfd.owner) {
       throw new Error('Only the owner can unlink addresses from this NFD')
     }
+
+    // Get the Address to unlink
+    const addressToUnlink =
+      typeof address === 'string' ? Address.fromString(address) : address
 
     // Get the NFD instance client
     if (!nfd.appID) {
       throw new Error('NFD has no application ID')
     }
     const nfdAppId = BigInt(nfd.appID)
-    const nfdInstanceClient = this.getInstanceClient(
-      nfdAppId,
-      signer.addr.toString(),
-    )
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
 
     // Get the registry client
-    const registryClient = this.getRegistryClient(signer.addr.toString())
+    const registryClient = this.getRegistryClient(signer.addr)
 
     try {
       // Create and execute the unlink transaction
@@ -222,7 +228,7 @@ export class NfdManager extends BaseModule {
           args: {
             nfdName: nfd.name,
             nfdAppId: nfdInstanceClient.appId,
-            addrToUnlink: address,
+            addrToUnlink: addressToUnlink.toString(),
           },
           staticFee: AlgoAmount.MicroAlgos(5000),
         })
@@ -245,12 +251,11 @@ export class NfdManager extends BaseModule {
    * @throws If the metadata cannot be set
    */
   public async setMetadata(metadata: Record<string, string>): Promise<Nfd> {
-    this.requireSigner()
+    const signer = this.requireSigner()
     const nfd = await this.getNfd()
 
-    // Ensure the caller is the owner
-    const signer = this.getSigner()
-    if (!signer || signer.addr.toString() !== nfd.owner) {
+    // Ensure the default signer is the owner
+    if (signer.addr.toString() !== nfd.owner) {
       throw new Error('Only the owner can set metadata for this NFD')
     }
 
@@ -259,10 +264,7 @@ export class NfdManager extends BaseModule {
       throw new Error('NFD has no application ID')
     }
     const nfdAppId = BigInt(nfd.appID)
-    const nfdInstanceClient = this.getInstanceClient(
-      nfdAppId,
-      signer.addr.toString(),
-    )
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
 
     // Convert metadata object to array of fields and values
     const fieldsAndValues: string[] = []
@@ -334,6 +336,58 @@ export class NfdManager extends BaseModule {
       await updateGroup.send({ populateAppCallResources: true })
     } catch (error) {
       throw new Error(`Failed to set metadata: ${parseTransactionError(error)}`)
+    }
+
+    // Refresh the NFD data
+    this._nfd = null
+    return this.getNfd()
+  }
+
+  /**
+   * Set a specific address as the primary address for the NFD
+   * @param address - The Algorand address to set as primary
+   * @returns The updated NFD
+   * @throws If the address cannot be set as primary
+   */
+  public async setPrimaryAddress(address: string | Address): Promise<Nfd> {
+    const signer = this.requireSigner()
+    const nfd = await this.getNfd()
+
+    // Ensure the default signer is the owner
+    if (signer.addr.toString() !== nfd.owner) {
+      throw new Error('Only the owner can set the primary address for this NFD')
+    }
+
+    // Get the Address to set as primary
+    const addressToSet =
+      typeof address === 'string' ? Address.fromString(address) : address
+
+    // Get the NFD instance client
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    const nfdAppId = BigInt(nfd.appID)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
+
+    // The only supported field for now is 'v.caAlgo.0.as'
+    const fieldName = 'v.caAlgo.0.as'
+
+    try {
+      // Create and execute the setPrimaryAddress transaction
+      await nfdInstanceClient
+        .newGroup()
+        .setPrimaryAddress({
+          args: {
+            fieldName,
+            address: addressToSet.toString(),
+          },
+          staticFee: AlgoAmount.MicroAlgos(3000),
+        })
+        .send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(
+        `Failed to set primary address: ${parseTransactionError(error)}`,
+      )
     }
 
     // Refresh the NFD data

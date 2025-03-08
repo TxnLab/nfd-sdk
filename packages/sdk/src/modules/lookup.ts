@@ -1,5 +1,6 @@
 import { Address } from 'algosdk'
 
+import { isZeroBytes } from '../utils/internal/bytes'
 import { determineNfdState, generateMetaTags } from '../utils/internal/nfd'
 import { parseAddress, parseString, parseUint64 } from '../utils/internal/state'
 import { isValidName } from '../utils/nfd'
@@ -179,6 +180,12 @@ export class LookupModule extends BaseModule {
           // Split the value into chunks of 32 bytes
           for (let i = 0; i < value.length; i += PUBLIC_KEY_LENGTH) {
             const publicKey = value.slice(i, i + PUBLIC_KEY_LENGTH)
+
+            // Skip zero addresses (all bytes are zero)
+            if (isZeroBytes(publicKey)) {
+              continue
+            }
+
             try {
               const address = new Address(publicKey).toString()
               if (address) {
@@ -192,6 +199,11 @@ export class LookupModule extends BaseModule {
                 error,
               )
             }
+          }
+
+          // Set the verified.caAlgo property as a comma-delimited string
+          if (caAlgo.length > 0) {
+            verified.caAlgo = caAlgo.join(',')
           }
         } catch (error) {
           console.error('Failed to parse Algorand addresses from box:', error)

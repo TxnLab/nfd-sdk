@@ -27,3 +27,12 @@ export function concatUint8Arrays(
 
   return concatenatedArray
 }
+
+/**
+ * Check if a Uint8Array contains only zero bytes
+ * @param array - The array to check
+ * @returns True if all bytes are zero, false otherwise
+ */
+export function isZeroBytes(array: Uint8Array): boolean {
+  return array.every((byte) => byte === 0)
+}
