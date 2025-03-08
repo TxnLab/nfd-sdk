@@ -79,10 +79,11 @@ const ConnectedWallet = ({ wallet }: { wallet: Wallet }) => {
         <select
           value={wallet.activeAccount?.address}
           onChange={(e) => wallet.setActiveAccount(e.target.value)}
+          style={{ maxWidth: '640px', padding: '2px' }}
         >
           {wallet.accounts.map((account) => (
             <option key={account.address} value={account.address}>
-              {account.name}
+              {account.address}
             </option>
           ))}
         </select>
@@ -90,7 +91,7 @@ const ConnectedWallet = ({ wallet }: { wallet: Wallet }) => {
 
       {wallet.activeAccount && (
         <div className="account-info">
-          <span>{wallet.activeAccount.address}</span>
+          Active Account: {wallet.activeAccount.address}
         </div>
       )}
 

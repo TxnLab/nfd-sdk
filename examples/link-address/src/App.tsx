@@ -19,15 +19,19 @@ export function App() {
   const [isUnlinking, setIsUnlinking] = useState(false)
   const [linkedAddresses, setLinkedAddresses] = useState<string[]>([])
 
-  const { activeAddress, transactionSigner } = useWallet()
+  const { activeAddress, activeWalletAddresses, transactionSigner } =
+    useWallet()
 
   const handleNfdInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNfdData(null)
     setNfdName(e.target.value)
     setLinkedAddresses([])
+    setAddressToLink('')
   }
 
-  const handleAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddressSelectChange = (
+    e: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
     setAddressToLink(e.target.value)
   }
 
@@ -36,6 +40,7 @@ export function App() {
     setError('')
     setNfdData(null)
     setLinkedAddresses([])
+    setAddressToLink('')
     setIsLoading(true)
 
     try {
@@ -81,8 +86,8 @@ export function App() {
         throw new Error('No NFD selected')
       }
 
-      if (!addressToLink.trim()) {
-        throw new Error('Please enter an address to link')
+      if (!addressToLink) {
+        throw new Error('Please select an address to link')
       }
 
       // Check if the address is already linked
@@ -93,6 +98,16 @@ export function App() {
       // Check if the active address is the owner
       if (nfdData.owner !== activeAddress) {
         throw new Error('Only the owner can link addresses to this NFD')
+      }
+
+      // Check if the address to link is in the available addresses
+      if (
+        !activeWalletAddresses ||
+        !activeWalletAddresses.includes(addressToLink)
+      ) {
+        throw new Error(
+          'The address to link must be one of your connected wallet addresses',
+        )
       }
 
       /**
@@ -169,6 +184,10 @@ export function App() {
       setIsUnlinking(false)
     }
   }
+
+  const availableAddresses = activeWalletAddresses
+    ? activeWalletAddresses.filter((addr) => !linkedAddresses.includes(addr))
+    : []
 
   return (
     <div>
@@ -260,12 +279,8 @@ export function App() {
                             <button
                               onClick={() => handleUnlinkAddress(address)}
                               disabled={isUnlinking}
-                              style={{
-                                padding: '2px 8px',
-                                fontSize: '12px',
-                              }}
                             >
-                              {isUnlinking ? 'Unlinking...' : 'Unlink'}
+                              Unlink
                             </button>
                           )}
                         </div>
@@ -278,20 +293,43 @@ export function App() {
               {nfdData.owner === activeAddress && (
                 <div style={{ marginTop: '20px' }}>
                   <h3>Link New Address</h3>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <input
-                      type="text"
-                      value={addressToLink}
-                      onChange={handleAddressInputChange}
-                      placeholder="Enter Algorand address to link"
-                      style={{ width: '350px' }}
-                    />
-                    <button
-                      onClick={handleLinkAddress}
-                      disabled={isLinking || !addressToLink.trim()}
-                    >
-                      {isLinking ? 'Linking...' : 'Link Address'}
-                    </button>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                    }}
+                  >
+                    {availableAddresses.length > 0 ? (
+                      <select
+                        value={addressToLink}
+                        onChange={handleAddressSelectChange}
+                        style={{ width: '350px' }}
+                      >
+                        <option value="">Select an address to link</option>
+                        {availableAddresses.map((address) => (
+                          <option key={address} value={address}>
+                            {address}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p style={{ margin: 0 }}>
+                        No available addresses to link.
+                      </p>
+                    )}
+                    <div>
+                      <button
+                        onClick={handleLinkAddress}
+                        disabled={
+                          isLinking ||
+                          !addressToLink ||
+                          availableAddresses.length === 0
+                        }
+                      >
+                        {isLinking ? 'Linking...' : 'Link Address'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

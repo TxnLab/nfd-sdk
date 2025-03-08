@@ -41,12 +41,15 @@ export abstract class BaseModule {
 
   /**
    * Ensure a signer is set before proceeding
+   * @returns The current signer
    * @throws If no signer is set
    */
-  protected requireSigner(): void {
-    if (!this.getSigner()) {
+  protected requireSigner(): TransactionSignerAccount {
+    const signer = this.getSigner()
+    if (!signer) {
       throw new Error('Signer required. Call setSigner() first.')
     }
+    return signer
   }
 
   /**
