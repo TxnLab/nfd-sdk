@@ -17,6 +17,7 @@ export function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [isLinking, setIsLinking] = useState(false)
   const [isUnlinking, setIsUnlinking] = useState(false)
+  const [isSettingPrimary, setIsSettingPrimary] = useState(false)
   const [linkedAddresses, setLinkedAddresses] = useState<string[]>([])
 
   const { activeAddress, activeWalletAddresses, transactionSigner } =
@@ -185,6 +186,54 @@ export function App() {
     }
   }
 
+  const handleSetPrimaryAddress = async (address: string) => {
+    setError('')
+    setIsSettingPrimary(true)
+
+    try {
+      if (!activeAddress) {
+        throw new Error('No active address')
+      }
+
+      if (!nfdData) {
+        throw new Error('No NFD selected')
+      }
+
+      // Check if the active address is the owner
+      if (nfdData.owner !== activeAddress) {
+        throw new Error(
+          'Only the owner can set the primary address for this NFD',
+        )
+      }
+
+      /**
+       * Set the address as primary for the NFD
+       */
+      const updatedNfd = await nfd
+        .setSigner(activeAddress, transactionSigner)
+        .manage(nfdName)
+        .setPrimaryAddress(address)
+
+      setNfdData(updatedNfd)
+
+      // Update the linked addresses list
+      const addresses: string[] = []
+      if (updatedNfd.caAlgo && updatedNfd.caAlgo.length > 0) {
+        updatedNfd.caAlgo.forEach((addr) => {
+          if (addr) {
+            addresses.push(addr)
+          }
+        })
+      }
+      setLinkedAddresses(addresses)
+    } catch (err) {
+      setError(parseTransactionError(err))
+      console.error(err)
+    } finally {
+      setIsSettingPrimary(false)
+    }
+  }
+
   const availableAddresses = activeWalletAddresses
     ? activeWalletAddresses.filter((addr) => !linkedAddresses.includes(addr))
     : []
@@ -264,24 +313,53 @@ export function App() {
                   <p>No addresses linked to this NFD.</p>
                 ) : (
                   <ul style={{ paddingLeft: '20px' }}>
-                    {linkedAddresses.map((address) => (
-                      <li key={address} style={{ marginBottom: '8px' }}>
+                    {linkedAddresses.map((address, index) => (
+                      <li key={address} style={{ marginBottom: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                           <span
                             style={{
                               fontFamily: 'monospace',
-                              marginRight: '10px',
+                              marginRight: '8px',
+                              wordBreak: 'break-all',
                             }}
                           >
                             {address}
                           </span>
-                          {nfdData.owner === activeAddress && (
-                            <button
-                              onClick={() => handleUnlinkAddress(address)}
-                              disabled={isUnlinking}
+                          {index === 0 && (
+                            <span
+                              style={{
+                                border: '1px solid #4361ee',
+                                backgroundColor: '#f1f5ff',
+                                borderRadius: '12px',
+                                padding: '2px 6px',
+                                fontSize: '0.85em',
+                                marginRight: '8px',
+                                color: '#4361ee',
+                              }}
                             >
-                              Unlink
-                            </button>
+                              Primary
+                            </span>
+                          )}
+                          {nfdData.owner === activeAddress && (
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              {index > 0 && (
+                                <button
+                                  onClick={() =>
+                                    handleSetPrimaryAddress(address)
+                                  }
+                                  disabled={isSettingPrimary}
+                                  style={{ marginRight: '4px' }}
+                                >
+                                  Set Primary
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleUnlinkAddress(address)}
+                                disabled={isUnlinking}
+                              >
+                                Unlink
+                              </button>
+                            </div>
                           )}
                         </div>
                       </li>
@@ -298,6 +376,7 @@ export function App() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
+                      flexWrap: 'wrap',
                     }}
                   >
                     {availableAddresses.length > 0 ? (

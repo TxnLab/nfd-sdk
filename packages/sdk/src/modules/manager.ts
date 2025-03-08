@@ -342,4 +342,56 @@ export class NfdManager extends BaseModule {
     this._nfd = null
     return this.getNfd()
   }
+
+  /**
+   * Set a specific address as the primary address for the NFD
+   * @param address - The Algorand address to set as primary
+   * @returns The updated NFD
+   * @throws If the address cannot be set as primary
+   */
+  public async setPrimaryAddress(address: string | Address): Promise<Nfd> {
+    const signer = this.requireSigner()
+    const nfd = await this.getNfd()
+
+    // Ensure the default signer is the owner
+    if (signer.addr.toString() !== nfd.owner) {
+      throw new Error('Only the owner can set the primary address for this NFD')
+    }
+
+    // Get the Address to set as primary
+    const addressToSet =
+      typeof address === 'string' ? Address.fromString(address) : address
+
+    // Get the NFD instance client
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    const nfdAppId = BigInt(nfd.appID)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
+
+    // The only supported field for now is 'v.caAlgo.0.as'
+    const fieldName = 'v.caAlgo.0.as'
+
+    try {
+      // Create and execute the setPrimaryAddress transaction
+      await nfdInstanceClient
+        .newGroup()
+        .setPrimaryAddress({
+          args: {
+            fieldName,
+            address: addressToSet.toString(),
+          },
+          staticFee: AlgoAmount.MicroAlgos(3000),
+        })
+        .send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(
+        `Failed to set primary address: ${parseTransactionError(error)}`,
+      )
+    }
+
+    // Refresh the NFD data
+    this._nfd = null
+    return this.getNfd()
+  }
 }
