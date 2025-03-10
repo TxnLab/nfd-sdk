@@ -173,7 +173,12 @@ export class NfdClient {
    * @throws If the mint operation fails
    */
   public async mint(nfdName: string, params: NfdMintParams): Promise<Nfd> {
-    return this._minting.mint(nfdName, params)
+    try {
+      return await this._minting.mint(nfdName, params)
+    } finally {
+      // Reset signer after operation
+      this._signer = null
+    }
   }
 
   /**
