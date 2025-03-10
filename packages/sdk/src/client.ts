@@ -13,7 +13,12 @@ import {
   NfdMintQuoteParams,
 } from './modules/minting'
 
-import type { Nfd, ResolveOptions } from './types'
+import type {
+  Nfd,
+  ResolveOptions,
+  SearchOptions,
+  SearchResponse,
+} from './types'
 
 /**
  * Configuration options for the NFD client
@@ -174,5 +179,65 @@ export class NfdClient {
       // Reset signer after operation
       this._signer = null
     }
+  }
+
+  /**
+   * Find the NFD associated with a specific wallet address
+   * @param address - The wallet address to look up
+   * @param options - Additional options for the lookup
+   * @returns The NFD associated with the address, or null if not found
+   */
+  public async resolveAddress(
+    address: string | Address,
+    options: {
+      view?: 'tiny' | 'thumbnail' | 'brief' | 'full'
+      allowUnverified?: boolean
+    } = {},
+  ): Promise<Nfd | null> {
+    const addressStr =
+      typeof address === 'string' ? address : address.toString()
+    const result = await this.api.reverseLookup([addressStr], options)
+    return result[addressStr] || null
+  }
+
+  /**
+   * Search for all NFDs owned by a specific wallet address
+   * @param address - The wallet address to search for
+   * @param options - Additional search options to apply
+   * @returns Search response containing owned NFDs
+   * @remarks
+   * By default, this method returns up to 20 results. You can override this by
+   * specifying a different limit in the options parameter.
+   */
+  public async searchByOwner(
+    address: string | Address,
+    options: Omit<SearchOptions, 'owner' | 'state'> = {},
+  ): Promise<SearchResponse> {
+    const addressStr =
+      typeof address === 'string' ? address : address.toString()
+    return this.api.search({
+      limit: 20,
+      ...options,
+      owner: addressStr,
+      state: ['owned'],
+    })
+  }
+
+  /**
+   * Search for all NFDs that are currently for sale
+   * @param options - Additional search options to apply
+   * @returns Search response containing NFDs for sale
+   * @remarks
+   * By default, this method returns up to 20 results. You can override this by
+   * specifying a different limit in the options parameter.
+   */
+  public async searchForSale(
+    options: Omit<SearchOptions, 'state'> = {},
+  ): Promise<SearchResponse> {
+    return this.api.search({
+      limit: 20,
+      ...options,
+      state: ['forSale'],
+    })
   }
 }
