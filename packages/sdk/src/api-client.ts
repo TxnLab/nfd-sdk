@@ -3,7 +3,13 @@ import { nfdGetLookup, nfdGetNfd, nfdSearchV2 } from './api/sdk.gen'
 import { NfdApiBaseUrl, NfdRegistryId } from './constants'
 import { chunkArray } from './utils/internal/array'
 
-import type { Nfd, SearchOptions, SearchResponse } from './types'
+import type {
+  Nfd,
+  SearchOptions,
+  SearchResponse,
+  ReverseLookupOptions,
+  ResolveOptions,
+} from './types'
 
 /**
  * Client for interacting with the NFD API
@@ -57,8 +63,8 @@ export class NfdApiClient {
   }
 
   /**
-   * Set the base URL for the API
-   * @param baseUrl - The base URL to use
+   * Set the base URL for the API client
+   * @param baseUrl - The base URL to use for API requests
    */
   public setBaseUrl(baseUrl: string): void {
     this._client.setConfig({
@@ -71,16 +77,17 @@ export class NfdApiClient {
    */
   public async resolve(
     nameOrId: string,
-    options: {
-      view?: 'tiny' | 'brief' | 'full'
-      poll?: boolean
-    } = {},
+    options: ResolveOptions = {},
   ): Promise<Nfd> {
+    // Add cache parameter if needed
+    const params = this._getCacheParam(options.nocache)
+
     const response = await nfdGetNfd({
       client: this._client,
       query: {
         view: options.view,
         poll: options.poll,
+        ...params,
       },
       path: {
         nameOrID: nameOrId,
@@ -92,22 +99,17 @@ export class NfdApiClient {
   }
 
   /**
-   * Perform reverse lookup of NFDs by addresses using the API
-   *
-   * This method finds NFDs associated with the provided wallet addresses.
-   * It automatically handles chunking for large batches of addresses (API limit is 20 per request),
-   * prioritizes verified NFDs over unverified ones, and properly merges results.
-   *
-   * @param addresses - Array of wallet addresses to look up
+   * Perform a reverse lookup to find NFDs associated with Algorand addresses
+   * @param addresses - Array of Algorand addresses to look up
    * @param options - Options for the lookup
-   * @returns A record mapping addresses to their associated NFDs
+   * @returns Record mapping addresses to their associated NFDs
+   * @remarks
+   * This method returns a record where each key is an Algorand address and the value is the NFD associated with that address.
+   * If an address is not associated with any NFDs, the value will be an empty object.
    */
   public async reverseLookup(
     addresses: string[],
-    options: {
-      view?: 'tiny' | 'thumbnail' | 'brief' | 'full'
-      allowUnverified?: boolean
-    } = {},
+    options: ReverseLookupOptions = {},
   ): Promise<Record<string, Nfd>> {
     // Filter out empty addresses
     const validAddresses = addresses.filter((addr) => addr.trim() !== '')
@@ -119,6 +121,9 @@ export class NfdApiClient {
     const addressChunks = chunkArray(validAddresses, 20)
 
     try {
+      // Add cache parameter if needed
+      const params = this._getCacheParam(options.nocache)
+
       // Make parallel requests for each chunk
       const responses = await Promise.all(
         addressChunks.map((chunk) =>
@@ -128,6 +133,7 @@ export class NfdApiClient {
               address: chunk,
               view: options.view,
               allowUnverified: options.allowUnverified,
+              ...params,
             },
             throwOnError: false, // Handle errors per chunk
           }).catch((error) => {
@@ -146,30 +152,8 @@ export class NfdApiClient {
 
       for (const response of responses) {
         if (response.data) {
-          Object.entries(response.data).forEach(([address, nfds]) => {
-            // Handle both array and single NFD responses
-            const nfdArray = Array.isArray(nfds) ? nfds : [nfds]
-
-            if (nfdArray.length > 0) {
-              // If allowUnverified is true, prioritize verified NFDs over unverified ones
-              if (options.allowUnverified) {
-                // Find the first verified NFD (with caAlgo property)
-                const verifiedNfd = nfdArray.find(
-                  (nfd) => nfd.caAlgo?.length > 0,
-                )
-
-                if (verifiedNfd) {
-                  mergedResults[address] = verifiedNfd
-                } else {
-                  // If no verified NFD, use the first one (which might be unverified)
-                  mergedResults[address] = nfdArray[0]
-                }
-              } else {
-                // If allowUnverified is false, just use the first NFD
-                // (API should only return verified NFDs in this case)
-                mergedResults[address] = nfdArray[0]
-              }
-            }
+          Object.entries(response.data).forEach(([address, nfd]) => {
+            mergedResults[address] = nfd as Nfd
           })
         }
       }
@@ -186,6 +170,9 @@ export class NfdApiClient {
    * Search for NFDs using the API
    */
   public async search(options: SearchOptions = {}): Promise<SearchResponse> {
+    // Add cache parameter if needed
+    const params = this._getCacheParam(options.nocache)
+
     const response = await nfdSearchV2({
       client: this._client,
       query: {
@@ -215,10 +202,30 @@ export class NfdApiClient {
         offset: options.offset,
         sort: options.sort,
         view: options.view,
+        ...params,
       },
       throwOnError: true,
     })
 
-    return response.data
+    return {
+      ...response.data,
+      nfds: response.data.nfds.map((nfd) => nfd as Nfd),
+    }
+  }
+
+  /**
+   * Internal method for cache parameter
+   * @private
+   */
+  private _getCacheParam(flag?: boolean): Record<string, number | undefined> {
+    if (!flag) {
+      return {}
+    }
+
+    const now = new Date()
+    const minutes = now.getMinutes()
+    const seconds = now.getSeconds()
+    const value = Math.floor(((minutes * 60 + seconds) % 120) / 4)
+    return { _cb: value }
   }
 }
