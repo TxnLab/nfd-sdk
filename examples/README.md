@@ -10,6 +10,7 @@ This directory contains example applications demonstrating various features of t
 - [Mint](./mint/): Demonstrates how to mint NFDs
 - [Link Address](./link-address/): Demonstrates how to link addresses to NFDs
 - [Set Metadata](./set-metadata/): Demonstrates how to set metadata for NFDs
+- [Set Primary NFD](./set-primary-nfd/): Demonstrates how to set a primary NFD for an address
 
 ## Getting Started
 

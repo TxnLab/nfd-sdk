@@ -18,6 +18,7 @@ import type {
   ResolveOptions,
   SearchOptions,
   SearchResponse,
+  ReverseLookupOptions,
 } from './types'
 
 /**
@@ -182,22 +183,43 @@ export class NfdClient {
   }
 
   /**
-   * Find the NFD associated with a specific wallet address
-   * @param address - The wallet address to look up
-   * @param options - Additional options for the lookup
+   * Resolve an address to find its associated NFD
+   * @param address - The address to resolve
+   * @param options - Options for the lookup
    * @returns The NFD associated with the address, or null if not found
    */
   public async resolveAddress(
     address: string | Address,
-    options: {
-      view?: 'tiny' | 'thumbnail' | 'brief' | 'full'
-      allowUnverified?: boolean
-    } = {},
+    options: ReverseLookupOptions = {},
   ): Promise<Nfd | null> {
     const addressStr =
       typeof address === 'string' ? address : address.toString()
+
     const result = await this.api.reverseLookup([addressStr], options)
-    return result[addressStr] || null
+    const nfd = result[addressStr]
+
+    if (!nfd) {
+      return null
+    }
+
+    return nfd
+  }
+
+  /**
+   * Resolve multiple addresses to find their associated NFDs
+   * @param addresses - Array of addresses to resolve
+   * @param options - Options for the lookup
+   * @returns Record mapping addresses to their associated NFD (one per address)
+   */
+  public async resolveAddresses(
+    addresses: Array<string | Address>,
+    options: ReverseLookupOptions = {},
+  ): Promise<Record<string, Nfd>> {
+    const addressStrings = addresses.map((addr) =>
+      typeof addr === 'string' ? addr : addr.toString(),
+    )
+
+    return this.api.reverseLookup(addressStrings, options)
   }
 
   /**

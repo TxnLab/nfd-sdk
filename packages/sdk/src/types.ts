@@ -38,6 +38,12 @@ export interface ReverseLookupOptions {
    * @default false
    */
   allowUnverified?: boolean
+
+  /**
+   * Set to true to return a never-cached result
+   * @default false
+   */
+  nocache?: boolean
 }
 
 /**
@@ -208,6 +214,12 @@ export interface SearchOptions {
    * @default 'brief'
    */
   view?: 'tiny' | 'thumbnail' | 'brief' | 'full'
+
+  /**
+   * Set to true to return a never-cached result
+   * @default false
+   */
+  nocache?: boolean
 }
 
 /**
