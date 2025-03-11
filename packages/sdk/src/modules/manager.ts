@@ -394,4 +394,51 @@ export class NfdManager extends BaseModule {
     this._nfd = null
     return this.getNfd()
   }
+
+  /**
+   * Set this NFD as the primary NFD for a specific address
+   * @param address - The Algorand address to set this NFD as primary for
+   * @returns The updated NFD
+   * @throws If the NFD cannot be set as primary for the address
+   */
+  public async setPrimaryNfd(address: string | Address): Promise<Nfd> {
+    const signer = this.requireSigner()
+    const nfd = await this.getNfd()
+
+    // Get the Address to set this NFD as primary for
+    const targetAddress =
+      typeof address === 'string' ? Address.fromString(address) : address
+
+    // Get the NFD app ID
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    const nfdAppId = BigInt(nfd.appID)
+
+    // Get the registry client
+    const registryClient = this.getRegistryClient(signer.addr)
+
+    try {
+      await registryClient
+        .newGroup()
+        .setAddressPrimaryNfd({
+          sender: targetAddress,
+          args: {
+            nfdName: nfd.name,
+            nfdAppId,
+            addrBeingModified: targetAddress.toString(),
+          },
+          staticFee: AlgoAmount.MicroAlgos(3000),
+        })
+        .send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(
+        `Failed to set primary NFD: ${parseTransactionError(error)}`,
+      )
+    }
+
+    // Refresh the NFD data
+    this._nfd = null
+    return this.getNfd()
+  }
 }
