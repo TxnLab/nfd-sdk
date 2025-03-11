@@ -10,7 +10,8 @@
     "lint": "pnpm -r lint",
     "format": "pnpm -r format",
     "typecheck": "pnpm --filter @txnlab/nfd-sdk typecheck",
-    "cipublish": "node scripts/publish.js"
+    "cipublish": "node scripts/publish.js",
+    "fresh-install": "rm -rf node_modules packages/*/node_modules examples/*/node_modules && pnpm install"
   },
   "keywords": [
     "algorand",
