@@ -206,6 +206,23 @@ export class NfdClient {
   }
 
   /**
+   * Resolve multiple addresses to find their associated NFDs
+   * @param addresses - Array of addresses to resolve
+   * @param options - Options for the lookup
+   * @returns Record mapping addresses to their associated NFD (one per address)
+   */
+  public async resolveAddresses(
+    addresses: Array<string | Address>,
+    options: ReverseLookupOptions = {},
+  ): Promise<Record<string, Nfd>> {
+    const addressStrings = addresses.map((addr) =>
+      typeof addr === 'string' ? addr : addr.toString(),
+    )
+
+    return this.api.reverseLookup(addressStrings, options)
+  }
+
+  /**
    * Search for all NFDs owned by a specific wallet address
    * @param address - The wallet address to search for
    * @param options - Additional search options to apply
