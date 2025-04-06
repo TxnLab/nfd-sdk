@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "composite": true,
+    "paths": {
+      "@txnlab/nfd-fetch": ["./src/index.ts"]
+    }
+  },
+  "include": [
+    "tests/*",
+    "scripts/*",
+    "*.config.ts"
+  ],
+}

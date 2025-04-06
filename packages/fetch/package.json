@@ -1,26 +1,29 @@
 {
-  "name": "@txnlab/nfd-sdk",
-  "version": "0.7.0",
-  "description": "JS SDK for interacting with NFDomains (NFD) directly on-chain and via API",
+  "name": "@txnlab/nfd-fetch",
+  "version": "0.0.1",
+  "description": "Fetch library for NFDomains (NFD)",
   "type": "module",
-  "main": "dist/cjs/index.cjs",
-  "module": "dist/esm/index.js",
-  "types": "dist/types/index.d.ts",
+  "main": "./lib/index.js",
+  "module": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/types/index.d.cts",
-        "default": "./dist/cjs/index.cjs"
-      }
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/client.gen.d.ts",
+      "default": "./lib/client.gen.js"
+    },
+    "./sdk": {
+      "types": "./lib/sdk.gen.d.ts",
+      "default": "./lib/sdk.gen.js"
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "dist",
+    "lib",
+    "src",
     "README.md"
   ],
   "keywords": [
@@ -29,28 +32,30 @@
     "nfdomains",
     "blockchain",
     "domains",
-    "sdk"
+    "fetch",
+    "rpc"
   ],
   "author": "TxnLab Inc.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TxnLab/nfd-sdk.git",
-    "directory": "packages/sdk"
+    "directory": "packages/fetch"
   },
   "bugs": {
     "url": "https://github.com/TxnLab/nfd-sdk/issues"
   },
-  "homepage": "https://github.com/TxnLab/nfd-sdk#readme",
+  "homepage": "https://github.com/TxnLab/nfd-sdk/packages/fetch#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "engines": {
     "node": ">=22",
     "pnpm": ">=9"
   },
   "scripts": {
-    "build": "vite build && publint --strict",
+    "build": "vite build && tsc-alias -p tsconfig.lib.json && publint --strict",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -58,34 +63,28 @@
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\"",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "fetch:arc56": "tsx scripts/fetch-arc56.ts",
-    "postfetch:arc56": "tsx scripts/clean-arc56.ts",
-    "fetch:specs": "pnpm fetch:arc56",
-    "generate:clients": "algokit generate client src/contracts/minimal/ --language typescript --output src/contracts/{contract_name}Client.ts",
-    "generate": "pnpm fetch:specs && pnpm generate:clients"
+    "fetch:openapi": "tsx scripts/fetch-openapi.ts",
+    "generate": "openapi-ts"
   },
   "dependencies": {
-    "@algorandfoundation/algokit-utils": "^8.2.2",
     "@hey-api/client-fetch": "^0.8.1",
-    "@txnlab/nfd-fetch": "workspace:*",
     "algosdk": "^3.2.0",
     "crypto-js": "^4.2.0"
   },
   "devDependencies": {
-    "@algorandfoundation/algokit-client-generator": "^4.0.8",
     "@hey-api/openapi-ts": "^0.64.5",
-    "@tanstack/config": "^0.16.2",
-    "@types/crypto-js": "^4.2.2",
     "@types/node": "^22.13.9",
     "@types/node-fetch": "^2.6.12",
     "@vitest/coverage-v8": "^3.0.7",
     "@vitest/ui": "^3.0.7",
     "dotenv": "^16.4.7",
-    "node-fetch": "^3.3.2",
+    "glob": "^11.0.1",
     "publint": "^0.3.6",
+    "tsc-alias": "^1.8.13",
     "tsx": "^4.19.3",
     "type-fest": "^4.37.0",
     "vite": "^6.2.0",
+    "vite-bundle-analyzer": "^0.18.1",
     "vite-plugin-dts": "^4.5.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.7"
