@@ -13,6 +13,7 @@ const nfd = NfdClient.testNet()
 export function App() {
   const [nfdName, setNfdName] = useState('')
   const [years, setYears] = useState(1)
+  const [reservedFor, setReservedFor] = useState('')
   const [nfdData, setNfdData] = useState<Nfd | null>(null)
   const [quoteData, setQuoteData] = useState<NfdMintQuote | null>(null)
   const [error, setError] = useState('')
@@ -25,6 +26,12 @@ export function App() {
     setQuoteData(null)
     setNfdData(null)
     setNfdName(e.target.value)
+  }
+
+  const handleReservedForChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuoteData(null)
+    setNfdData(null)
+    setReservedFor(e.target.value)
   }
 
   const handleGetQuote = async (e: React.FormEvent) => {
@@ -78,6 +85,7 @@ export function App() {
         .mint(quote.nfdName, {
           buyer: quote.buyer,
           years: quote.years,
+          ...(reservedFor.trim() && { reservedFor: reservedFor.trim() }),
         })
 
       setNfdData(mintedNfd)
@@ -138,6 +146,20 @@ export function App() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div style={{ marginBottom: '10px' }}>
+                <label htmlFor="reservedFor" style={{ marginRight: '10px' }}>
+                  Reserved for (optional):
+                </label>
+                <input
+                  id="reservedFor"
+                  type="text"
+                  value={reservedFor}
+                  onChange={handleReservedForChange}
+                  placeholder="Enter Algorand address"
+                  style={{ width: '350px' }}
+                />
               </div>
             </fieldset>
 
