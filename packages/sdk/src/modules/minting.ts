@@ -1,4 +1,5 @@
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
+import { isValidAddress } from 'algosdk'
 
 import {
   canMintSegment,
@@ -25,6 +26,11 @@ export interface NfdMintParams {
    * Number of years until expiration (1-20)
    */
   years: number
+
+  /**
+   * Optional address to reserve the NFD for. If not provided, the buyer's address will be used.
+   */
+  reservedFor?: string
 }
 
 /**
@@ -264,7 +270,7 @@ export class MintingModule extends BaseModule {
       )
     }
 
-    const { buyer: buyerAddr, years: numYears } = params
+    const { buyer: buyerAddr, years: numYears, reservedFor } = params
 
     // Validate years parameter
     if (numYears <= 0) {
@@ -273,6 +279,11 @@ export class MintingModule extends BaseModule {
 
     if (!Number.isInteger(numYears)) {
       throw new Error('Years must be an integer')
+    }
+
+    // Validate reservedFor address
+    if (reservedFor && !isValidAddress(reservedFor)) {
+      throw new Error('Invalid reservedFor address')
     }
 
     // Get constraints to determine max years allowed
@@ -328,7 +339,7 @@ export class MintingModule extends BaseModule {
         args: {
           purchaseTxn: paymentTxn,
           nfdName,
-          reservedFor: buyerAddr,
+          reservedFor: reservedFor || buyerAddr,
           linkOnMint: false,
         },
         extraFee: AlgoAmount.MicroAlgos(extraFee),
