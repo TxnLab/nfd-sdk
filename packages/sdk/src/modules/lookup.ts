@@ -239,7 +239,7 @@ export class LookupModule extends BaseModule {
       expired: isExpired,
       owner: parseAddress('i.owner.a', globalState),
       nfdAccount: instanceClient.appAddress.toString(),
-      reservedFor: verified['reservedFor'],
+      reservedFor: parseAddress('i.reservedOwner.a', globalState) || undefined,
       sellAmount: parseUint64('i.sellamt', globalState),
       isMinting: parseString('i.minting', globalState) !== '',
     }
@@ -271,6 +271,9 @@ export class LookupModule extends BaseModule {
       }),
       seller: parseAddress('i.seller.a', globalState),
       nfdAccount: instanceClient.appAddress.toString(),
+      ...(parseAddress('i.reservedOwner.a', globalState) && {
+        reservedFor: parseAddress('i.reservedOwner.a', globalState),
+      }),
       metaTags,
       timeCreated: new Date(
         parseUint64('i.timeCreated', globalState) * 1000,
@@ -318,6 +321,9 @@ export class LookupModule extends BaseModule {
           name: parseString('i.name', globalState),
           owner: parseAddress('i.owner.a', globalState),
           seller: parseAddress('i.seller.a', globalState),
+          ...(parseAddress('i.reservedOwner.a', globalState) && {
+            reservedOwner: parseAddress('i.reservedOwner.a', globalState),
+          }),
           asaid: parseUint64('i.asaid', globalState).toString(),
           ...(globalState['i.parentAppID'] && {
             parentAppID: parseUint64('i.parentAppID', globalState).toString(),
