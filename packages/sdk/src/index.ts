@@ -18,6 +18,7 @@ export { NfdApiClient } from './api-client'
 
 // Export modules
 export { NfdManager } from './modules/manager'
+export { PurchasingModule } from './modules/purchasing'
 
 // Export module types
 export type {
@@ -25,6 +26,13 @@ export type {
   NfdMintQuote,
   NfdMintParams,
 } from './modules/minting'
+
+export type {
+  NfdClaimParams,
+  NfdBuyParams,
+  NfdPurchaseQuoteParams,
+  NfdPurchaseQuote,
+} from './modules/purchasing'
 
 // Export NFD utility functions
 export {

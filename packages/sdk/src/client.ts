@@ -12,6 +12,7 @@ import {
   NfdMintQuote,
   NfdMintQuoteParams,
 } from './modules/minting'
+import { PurchasingModule } from './modules/purchasing'
 
 import type {
   Nfd,
@@ -136,6 +137,14 @@ export class NfdClient {
    */
   public manage(nameOrAppId: string | number | bigint): NfdManager {
     return new NfdManager(this, nameOrAppId)
+  }
+
+  /**
+   * Get access to purchasing and claiming functionality
+   * @returns A purchasing module instance
+   */
+  public purchasing(): PurchasingModule {
+    return new PurchasingModule(this)
   }
 
   /**
