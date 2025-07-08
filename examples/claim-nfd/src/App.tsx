@@ -1,6 +1,6 @@
 import { NfdClient, type Nfd, type SearchResponse } from '@txnlab/nfd-sdk'
 import { useWallet } from '@txnlab/use-wallet-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 import { WalletMenu } from './Connect'
 
@@ -21,7 +21,7 @@ export function App() {
   /**
    * Search for NFDs reserved for the active address
    */
-  const searchReservedNfds = async () => {
+  const searchReservedNfds = useCallback(async () => {
     if (!activeAddress) return
 
     setIsLoading(true)
@@ -43,7 +43,7 @@ export function App() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [activeAddress])
 
   /**
    * Claim a reserved NFD
@@ -58,11 +58,10 @@ export function App() {
     setError('')
 
     try {
-      // Use the purchasing module to claim the NFD
+      // Use the simplified API to claim the NFD directly
       const claimedNfd = await nfd
         .setSigner(activeAddress, transactionSigner)
-        .purchasing()
-        .claim(nfdName, { claimer: activeAddress })
+        .claim(nfdName)
 
       console.log('Successfully claimed NFD:', claimedNfd)
 
@@ -90,7 +89,7 @@ export function App() {
       setError('')
       setClaimedNfds(new Set())
     }
-  }, [activeAddress])
+  }, [activeAddress, searchReservedNfds])
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>

@@ -27,12 +27,7 @@ export type {
   NfdMintParams,
 } from './modules/minting'
 
-export type {
-  NfdClaimParams,
-  NfdBuyParams,
-  NfdPurchaseQuoteParams,
-  NfdPurchaseQuote,
-} from './modules/purchasing'
+export type { NfdPurchaseQuote } from './modules/purchasing'
 
 // Export NFD utility functions
 export {

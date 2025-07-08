@@ -57,32 +57,56 @@ const mockOwnedNfd: Nfd = {
   owner: OTHER_ADDRESS,
 }
 
+// Mock types
+interface MockAlgorand {
+  createTransaction: {
+    payment: ReturnType<typeof vi.fn>
+  }
+  setSigner: ReturnType<typeof vi.fn>
+}
+
+interface MockInstanceClient {
+  appAddress: string
+  newGroup: ReturnType<typeof vi.fn>
+}
+
+interface MockSigner {
+  addr: { toString: () => string }
+  signer: ReturnType<typeof vi.fn>
+}
+
 // Mock Algorand client
-const mockAlgorand = {
+const mockAlgorand: MockAlgorand = {
   createTransaction: {
     payment: vi.fn().mockResolvedValue({ id: 'mock-txn' }),
   },
   setSigner: vi.fn(),
-} as any
+}
 
 // Mock NFD instance client
-const mockInstanceClient = {
+const mockInstanceClient: MockInstanceClient = {
   appAddress: 'mock-app-address',
   newGroup: vi.fn().mockReturnValue({
     purchase: vi.fn().mockReturnValue({
       send: vi.fn().mockResolvedValue({}),
     }),
   }),
-} as any
+}
 
 // Mock the dependencies
 vi.mock('algosdk', () => ({
   isValidAddress: vi.fn((addr: string) => addr.length === 58),
   Address: {
-    fromString: vi.fn((addr: string) => ({
-      toString: () => addr,
-      publicKey: new Uint8Array(32),
-    })),
+    fromString: vi.fn((addr: string) => {
+      // Throw error for invalid addresses (less than 58 characters)
+      if (addr.length !== 58) {
+        throw new Error('Invalid address')
+      }
+      return {
+        toString: () => addr,
+        publicKey: new Uint8Array(32),
+      }
+    }),
   },
 }))
 
@@ -105,7 +129,7 @@ vi.mock('../src/utils/error-parser', () => ({
 describe('PurchasingModule', () => {
   let client: NfdClient
   let purchasing: PurchasingModule
-  let mockSigner: any
+  let mockSigner: MockSigner
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -139,6 +163,7 @@ describe('PurchasingModule', () => {
     })
 
     // Mock getInstanceClient method
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.spyOn(purchasing as any, 'getInstanceClient').mockReturnValue(
       mockInstanceClient,
     )
@@ -146,9 +171,10 @@ describe('PurchasingModule', () => {
 
   describe('getPurchaseQuote', () => {
     it('should return a valid quote for a reserved NFD', async () => {
-      const quote = await purchasing.getPurchaseQuote('reserved.algo', {
-        buyer: BUYER_ADDRESS,
-      })
+      const quote = await purchasing.getPurchaseQuote(
+        'reserved.algo',
+        BUYER_ADDRESS,
+      )
 
       expect(quote).toEqual({
         nfdName: 'reserved.algo',
@@ -165,9 +191,10 @@ describe('PurchasingModule', () => {
     })
 
     it('should return a valid quote for an NFD for sale', async () => {
-      const quote = await purchasing.getPurchaseQuote('forsale.algo', {
-        buyer: BUYER_ADDRESS,
-      })
+      const quote = await purchasing.getPurchaseQuote(
+        'forsale.algo',
+        BUYER_ADDRESS,
+      )
 
       expect(quote).toEqual({
         nfdName: 'forsale.algo',
@@ -184,9 +211,10 @@ describe('PurchasingModule', () => {
     })
 
     it('should return unauthorized for NFD reserved for someone else', async () => {
-      const quote = await purchasing.getPurchaseQuote('reserved.algo', {
-        buyer: OTHER_ADDRESS,
-      })
+      const quote = await purchasing.getPurchaseQuote(
+        'reserved.algo',
+        OTHER_ADDRESS,
+      )
 
       expect(quote).toEqual({
         nfdName: 'reserved.algo',
@@ -203,9 +231,10 @@ describe('PurchasingModule', () => {
     })
 
     it('should return unauthorized for owned NFD', async () => {
-      const quote = await purchasing.getPurchaseQuote('owned.algo', {
-        buyer: BUYER_ADDRESS,
-      })
+      const quote = await purchasing.getPurchaseQuote(
+        'owned.algo',
+        BUYER_ADDRESS,
+      )
 
       expect(quote).toEqual({
         nfdName: 'owned.algo',
@@ -222,9 +251,10 @@ describe('PurchasingModule', () => {
     })
 
     it('should return a valid quote for an NFD for sale but reserved for buyer', async () => {
-      const quote = await purchasing.getPurchaseQuote('forsale-reserved.algo', {
-        buyer: BUYER_ADDRESS,
-      })
+      const quote = await purchasing.getPurchaseQuote(
+        'forsale-reserved.algo',
+        BUYER_ADDRESS,
+      )
 
       expect(quote).toEqual({
         nfdName: 'forsale-reserved.algo',
@@ -242,18 +272,14 @@ describe('PurchasingModule', () => {
 
     it('should throw error for invalid buyer address', async () => {
       await expect(
-        purchasing.getPurchaseQuote('reserved.algo', {
-          buyer: 'invalid-address',
-        }),
+        purchasing.getPurchaseQuote('reserved.algo', 'invalid-address'),
       ).rejects.toThrow('Invalid buyer: invalid-address')
     })
   })
 
   describe('claim', () => {
     it('should successfully claim a reserved NFD', async () => {
-      const result = await purchasing.claim('reserved.algo', {
-        claimer: BUYER_ADDRESS,
-      })
+      const result = await purchasing.claim('reserved.algo')
 
       expect(mockAlgorand.createTransaction.payment).toHaveBeenCalledWith({
         sender: BUYER_ADDRESS,
@@ -281,39 +307,24 @@ describe('PurchasingModule', () => {
 
     it('should throw error if claimer is not authorized', async () => {
       // Set up a different signer for this test
-      const otherSigner = {
+      const otherSigner: MockSigner = {
         addr: { toString: () => OTHER_ADDRESS },
         signer: vi.fn(),
       }
       client.setSigner(OTHER_ADDRESS, otherSigner.signer)
       const purchasing2 = new PurchasingModule(client)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.spyOn(purchasing2 as any, 'getInstanceClient').mockReturnValue(
         mockInstanceClient,
       )
 
-      await expect(
-        purchasing2.claim('reserved.algo', {
-          claimer: OTHER_ADDRESS,
-        }),
-      ).rejects.toThrow(
+      await expect(purchasing2.claim('reserved.algo')).rejects.toThrow(
         'NFD is reserved for ZZAF5ARA4MEC5PVDOP64JM5O5MQST63Q2KOY2FLYFLXXD3PFSNJJBYAFZM, but buyer is CCAF5ARA4MEC5PVDOP64JM5O5MQST63Q2KOY2FLYFLXXD3PFSNJJBYAFZM',
       )
     })
 
-    it('should throw error if signer does not match claimer', async () => {
-      await expect(
-        purchasing.claim('reserved.algo', {
-          claimer: OTHER_ADDRESS,
-        }),
-      ).rejects.toThrow(
-        `Signer address (${BUYER_ADDRESS}) does not match claimer address (${OTHER_ADDRESS})`,
-      )
-    })
-
     it('should successfully claim an NFD that is for sale but reserved for claimer', async () => {
-      const result = await purchasing.claim('forsale-reserved.algo', {
-        claimer: BUYER_ADDRESS,
-      })
+      const result = await purchasing.claim('forsale-reserved.algo')
 
       expect(mockAlgorand.createTransaction.payment).toHaveBeenCalledWith({
         sender: BUYER_ADDRESS,
@@ -327,19 +338,15 @@ describe('PurchasingModule', () => {
     })
 
     it('should throw error for NFD that cannot be claimed', async () => {
-      await expect(
-        purchasing.claim('forsale.algo', {
-          claimer: BUYER_ADDRESS,
-        }),
-      ).rejects.toThrow('Cannot claim NFD: forsale.algo (state: forSale)')
+      await expect(purchasing.claim('forsale.algo')).rejects.toThrow(
+        'Cannot claim NFD: forsale.algo (state: forSale)',
+      )
     })
   })
 
   describe('buy', () => {
     it('should successfully buy an NFD for sale', async () => {
-      const result = await purchasing.buy('forsale.algo', {
-        buyer: BUYER_ADDRESS,
-      })
+      const result = await purchasing.buy('forsale.algo')
 
       expect(mockAlgorand.createTransaction.payment).toHaveBeenCalledWith({
         sender: BUYER_ADDRESS,
@@ -365,44 +372,28 @@ describe('PurchasingModule', () => {
       expect(result).toEqual(mockForSaleNfd)
     })
 
-    it('should respect maxPayment limit', async () => {
-      await expect(
-        purchasing.buy('forsale.algo', {
-          buyer: BUYER_ADDRESS,
-          maxPayment: 500000, // 0.5 ALGO, less than the 1 ALGO price
-        }),
-      ).rejects.toThrow(
-        'NFD price (1000000 microAlgos) exceeds maximum payment (500000 microAlgos)',
-      )
-    })
-
     it('should throw error if buyer is not authorized', async () => {
       // Set up a different signer for this test
-      const otherSigner = {
+      const otherSigner: MockSigner = {
         addr: { toString: () => OTHER_ADDRESS },
         signer: vi.fn(),
       }
       client.setSigner(OTHER_ADDRESS, otherSigner.signer)
       const purchasing2 = new PurchasingModule(client)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.spyOn(purchasing2 as any, 'getInstanceClient').mockReturnValue(
         mockInstanceClient,
       )
 
-      await expect(
-        purchasing2.buy('forsale-reserved.algo', {
-          buyer: OTHER_ADDRESS,
-        }),
-      ).rejects.toThrow(
+      await expect(purchasing2.buy('forsale-reserved.algo')).rejects.toThrow(
         'NFD is reserved for ZZAF5ARA4MEC5PVDOP64JM5O5MQST63Q2KOY2FLYFLXXD3PFSNJJBYAFZM, but buyer is CCAF5ARA4MEC5PVDOP64JM5O5MQST63Q2KOY2FLYFLXXD3PFSNJJBYAFZM',
       )
     })
 
     it('should throw error for NFD that cannot be bought', async () => {
-      await expect(
-        purchasing.buy('owned.algo', {
-          buyer: BUYER_ADDRESS,
-        }),
-      ).rejects.toThrow('NFD is not available for purchase (state: owned)')
+      await expect(purchasing.buy('owned.algo')).rejects.toThrow(
+        'NFD is not available for purchase (state: owned)',
+      )
     })
   })
 
@@ -444,20 +435,38 @@ describe('PurchasingModule', () => {
   })
 
   describe('address validation', () => {
-    it('should throw error for invalid claimer address', async () => {
+    it('should throw error for invalid buyer address in getPurchaseQuote', async () => {
       await expect(
-        purchasing.claim('reserved.algo', {
-          claimer: 'invalid',
-        }),
-      ).rejects.toThrow('Invalid claimer: invalid')
+        purchasing.getPurchaseQuote('reserved.algo', 'invalid'),
+      ).rejects.toThrow('Invalid buyer: invalid')
     })
 
-    it('should throw error for invalid buyer address', async () => {
-      await expect(
-        purchasing.buy('forsale.algo', {
-          buyer: 'invalid',
-        }),
-      ).rejects.toThrow('Invalid buyer: invalid')
+    it('should throw error for invalid buyer address in buy', async () => {
+      // Mock the signer to return an invalid address when toString() is called
+      const mockInvalidSigner: MockSigner = {
+        addr: { toString: () => 'invalid' },
+        signer: vi.fn(),
+      }
+
+      // Create a new client with a valid signer first
+      const clientWithValidSigner = new NfdClient()
+      clientWithValidSigner.setSigner(BUYER_ADDRESS, mockSigner.signer)
+
+      // Now override the signer property to use our invalid signer
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(clientWithValidSigner as any)._signer = mockInvalidSigner
+
+      const purchasing2 = new PurchasingModule(clientWithValidSigner)
+
+      // Ensure proper mocking for the new instance
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.spyOn(purchasing2 as any, 'getInstanceClient').mockReturnValue(
+        mockInstanceClient,
+      )
+
+      await expect(purchasing2.buy('forsale.algo')).rejects.toThrow(
+        'Invalid buyer: invalid',
+      )
     })
   })
 })

@@ -12,7 +12,7 @@ import {
   NfdMintQuote,
   NfdMintQuoteParams,
 } from './modules/minting'
-import { PurchasingModule } from './modules/purchasing'
+import { PurchasingModule, NfdPurchaseQuote } from './modules/purchasing'
 
 import type {
   Nfd,
@@ -47,6 +47,7 @@ export class NfdClient {
   // Core modules
   private readonly _lookup: LookupModule
   private readonly _minting: MintingModule
+  private readonly _purchasing: PurchasingModule
 
   private _signer: TransactionSignerAccount | null = null
 
@@ -58,6 +59,7 @@ export class NfdClient {
     // Initialize modules
     this._lookup = new LookupModule(this)
     this._minting = new MintingModule(this)
+    this._purchasing = new PurchasingModule(this)
   }
 
   /**
@@ -185,6 +187,63 @@ export class NfdClient {
   public async mint(nfdName: string, params: NfdMintParams): Promise<Nfd> {
     try {
       return await this._minting.mint(nfdName, params)
+    } finally {
+      // Reset signer after operation
+      this._signer = null
+    }
+  }
+
+  /**
+   * Get a quote for purchasing an NFD
+   * @param nameOrAppId - The NFD name or application ID to get a quote for
+   * @returns A detailed purchase quote including price and eligibility
+   * @throws If the quote cannot be generated or signer is not set
+   */
+  public async getPurchaseQuote(
+    nameOrAppId: string | number | bigint,
+  ): Promise<NfdPurchaseQuote> {
+    if (!this._signer) {
+      throw new Error('Signer must be set before getting purchase quote')
+    }
+
+    return this._purchasing.getPurchaseQuote(
+      nameOrAppId,
+      this._signer.addr.toString(),
+    )
+  }
+
+  /**
+   * Claim an NFD that is reserved for the claimer
+   * @param nameOrAppId - The NFD name or application ID to claim
+   * @returns The claimed NFD record
+   * @throws If the claim operation fails or signer is not set
+   */
+  public async claim(nameOrAppId: string | number | bigint): Promise<Nfd> {
+    if (!this._signer) {
+      throw new Error('Signer must be set before claiming NFD')
+    }
+
+    try {
+      return await this._purchasing.claim(nameOrAppId)
+    } finally {
+      // Reset signer after operation
+      this._signer = null
+    }
+  }
+
+  /**
+   * Buy an NFD from the secondary market
+   * @param nameOrAppId - The NFD name or application ID to buy
+   * @returns The purchased NFD record
+   * @throws If the buy operation fails or signer is not set
+   */
+  public async buy(nameOrAppId: string | number | bigint): Promise<Nfd> {
+    if (!this._signer) {
+      throw new Error('Signer must be set before buying NFD')
+    }
+
+    try {
+      return await this._purchasing.buy(nameOrAppId)
     } finally {
       // Reset signer after operation
       this._signer = null

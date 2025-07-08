@@ -1,51 +1,13 @@
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
-import { isValidAddress } from 'algosdk'
+import { Address } from 'algosdk'
 
+import { Nfd } from '../types'
 import { parseTransactionError } from '../utils/error-parser'
 
 import { BaseModule } from './base'
 
-import type { Nfd } from '../types'
-
 /**
- * Configuration options for claiming a reserved NFD
- */
-export interface NfdClaimParams {
-  /**
-   * The address of the claimer (must match the reservedFor address)
-   */
-  claimer: string
-}
-
-/**
- * Configuration options for buying an NFD from the secondary market
- */
-export interface NfdBuyParams {
-  /**
-   * The address of the buyer
-   */
-  buyer: string
-
-  /**
-   * Optional maximum amount willing to pay in microAlgos.
-   * If not provided, will pay the exact sell amount.
-   * If provided and the sell amount is higher, the transaction will fail.
-   */
-  maxPayment?: bigint | number
-}
-
-/**
- * Configuration options for getting a purchase quote
- */
-export interface NfdPurchaseQuoteParams {
-  /**
-   * The address of the potential buyer/claimer
-   */
-  buyer: string
-}
-
-/**
- * Purchase quote information for an NFD
+ * Response structure for purchase quote requests
  */
 export interface NfdPurchaseQuote {
   /** The NFD name being quoted */
@@ -71,35 +33,32 @@ export interface NfdPurchaseQuote {
 }
 
 /**
- * Module for NFD purchasing and claiming operations
+ * Module for handling NFD purchasing operations (claiming and buying)
  */
 export class PurchasingModule extends BaseModule {
   /**
-   * Validate that the provided address is valid
-   * @internal
-   * @param address - The address to validate
-   * @param paramName - Name of the parameter being validated (for error messages)
-   * @throws If the address is invalid
+   * Validate an Algorand address
+   * @private
    */
   private validateAddress(address: string, paramName: string): void {
-    if (!isValidAddress(address)) {
+    try {
+      Address.fromString(address)
+    } catch {
       throw new Error(`Invalid ${paramName}: ${address}`)
     }
   }
 
   /**
-   * Get detailed purchase information for an NFD
+   * Get a purchase quote for an NFD
    * @param nameOrAppId - The NFD name or application ID
-   * @param params - Parameters for the quote
+   * @param buyer - The buyer address
    * @returns Detailed purchase quote including eligibility and pricing
    * @throws If the NFD cannot be resolved or quote cannot be generated
    */
   public async getPurchaseQuote(
     nameOrAppId: string | number | bigint,
-    params: NfdPurchaseQuoteParams,
+    buyer: string,
   ): Promise<NfdPurchaseQuote> {
-    const { buyer } = params
-
     // Validate buyer address
     this.validateAddress(buyer, 'buyer')
 
@@ -171,31 +130,20 @@ export class PurchasingModule extends BaseModule {
   /**
    * Claim an NFD that is reserved for the caller
    * @param nameOrAppId - The NFD name or application ID to claim
-   * @param params - Parameters for claiming
    * @returns The claimed NFD record
    * @throws If the claim operation fails
    */
-  public async claim(
-    nameOrAppId: string | number | bigint,
-    params: NfdClaimParams,
-  ): Promise<Nfd> {
+  public async claim(nameOrAppId: string | number | bigint): Promise<Nfd> {
     // Ensure a signer is set
     const signer = this.requireSigner()
 
-    const { claimer } = params
+    const claimer = signer.addr.toString()
 
     // Validate claimer address
     this.validateAddress(claimer, 'claimer')
 
-    // Ensure the signer matches the claimer
-    if (signer.addr.toString() !== claimer) {
-      throw new Error(
-        `Signer address (${signer.addr.toString()}) does not match claimer address (${claimer})`,
-      )
-    }
-
     // Get purchase quote to validate eligibility
-    const quote = await this.getPurchaseQuote(nameOrAppId, { buyer: claimer })
+    const quote = await this.getPurchaseQuote(nameOrAppId, claimer)
 
     if (!quote.canClaim) {
       throw new Error(
@@ -247,31 +195,20 @@ export class PurchasingModule extends BaseModule {
   /**
    * Buy an NFD from the secondary market
    * @param nameOrAppId - The NFD name or application ID to buy
-   * @param params - Parameters for buying
    * @returns The purchased NFD record
    * @throws If the buy operation fails
    */
-  public async buy(
-    nameOrAppId: string | number | bigint,
-    params: NfdBuyParams,
-  ): Promise<Nfd> {
+  public async buy(nameOrAppId: string | number | bigint): Promise<Nfd> {
     // Ensure a signer is set
     const signer = this.requireSigner()
 
-    const { buyer, maxPayment } = params
+    const buyer = signer.addr.toString()
 
     // Validate buyer address
     this.validateAddress(buyer, 'buyer')
 
-    // Ensure the signer matches the buyer
-    if (signer.addr.toString() !== buyer) {
-      throw new Error(
-        `Signer address (${signer.addr.toString()}) does not match buyer address (${buyer})`,
-      )
-    }
-
     // Get purchase quote to validate eligibility and get pricing
-    const quote = await this.getPurchaseQuote(nameOrAppId, { buyer })
+    const quote = await this.getPurchaseQuote(nameOrAppId, buyer)
 
     if (!quote.canBuy) {
       throw new Error(
@@ -284,13 +221,6 @@ export class PurchasingModule extends BaseModule {
       throw new Error(
         quote.authorizationError ||
           `Not authorized to buy NFD: ${quote.nfdName}`,
-      )
-    }
-
-    // Validate max payment if provided
-    if (maxPayment !== undefined && quote.price > BigInt(maxPayment)) {
-      throw new Error(
-        `NFD price (${quote.price} microAlgos) exceeds maximum payment (${maxPayment} microAlgos)`,
       )
     }
 
@@ -330,15 +260,15 @@ export class PurchasingModule extends BaseModule {
   /**
    * Check if an NFD can be claimed by a specific address
    * @param nameOrAppId - The NFD name or application ID
-   * @param claimer - The address of the potential claimer
-   * @returns True if the NFD can be claimed by the address
+   * @param claimer - The address to check claim eligibility for
+   * @returns True if the NFD can be claimed, false otherwise
    */
   public async canClaim(
     nameOrAppId: string | number | bigint,
     claimer: string,
   ): Promise<boolean> {
     try {
-      const quote = await this.getPurchaseQuote(nameOrAppId, { buyer: claimer })
+      const quote = await this.getPurchaseQuote(nameOrAppId, claimer)
       return quote.canClaim && quote.authorized
     } catch {
       return false
@@ -348,15 +278,15 @@ export class PurchasingModule extends BaseModule {
   /**
    * Check if an NFD can be bought by a specific address
    * @param nameOrAppId - The NFD name or application ID
-   * @param buyer - The address of the potential buyer
-   * @returns True if the NFD can be bought by the address
+   * @param buyer - The address to check buy eligibility for
+   * @returns True if the NFD can be bought, false otherwise
    */
   public async canBuy(
     nameOrAppId: string | number | bigint,
     buyer: string,
   ): Promise<boolean> {
     try {
-      const quote = await this.getPurchaseQuote(nameOrAppId, { buyer })
+      const quote = await this.getPurchaseQuote(nameOrAppId, buyer)
       return quote.canBuy && quote.authorized
     } catch {
       return false
