@@ -48,7 +48,7 @@ The NFD SDK automatically uses your connected wallet address as the claimer, mak
 
 - This example runs on Algorand TestNet
 - You need TestNet ALGO in your wallet to pay for transaction fees
-- Reserved NFDs can be claimed for free (0 ALGO), but transaction fees still apply
+- Reserved NFDs may have a claiming cost (calculated based on the NFD's pricing), plus transaction fees
 - Make sure your wallet is connected to TestNet
 
 ## Technology Stack

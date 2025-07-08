@@ -110,6 +110,37 @@ const mintedNfd = await nfd
   })
 ```
 
+### Purchasing NFDs (Claiming & Buying)
+
+```typescript
+import { NfdClient } from '@txnlab/nfd-sdk'
+
+const nfd = NfdClient.testNet()
+
+// Get a purchase quote to check eligibility and pricing
+const quote = await nfd
+  .setSigner(activeAddress, transactionSigner)
+  .getPurchaseQuote('reserved-nfd.algo')
+
+if (quote.canClaim) {
+  // Claim a reserved NFD (automatically uses signer's address)
+  const claimedNfd = await nfd
+    .setSigner(activeAddress, transactionSigner)
+    .claim('reserved-nfd.algo')
+
+  console.log('Successfully claimed:', claimedNfd.name)
+}
+
+if (quote.canBuy) {
+  // Buy an NFD from the secondary market
+  const purchasedNfd = await nfd
+    .setSigner(activeAddress, transactionSigner)
+    .buy('forsale-nfd.algo')
+
+  console.log('Successfully purchased:', purchasedNfd.name)
+}
+```
+
 ### Managing an NFD
 
 ```typescript
