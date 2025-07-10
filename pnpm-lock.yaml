@@ -205,6 +205,34 @@ importers:
         specifier: ^0.23.0
         version: 0.23.0(rollup@4.34.8)(vite@4.5.9(@types/node@22.13.9))
 
+  examples/nfd-metadata:
+    dependencies:
+      '@txnlab/nfd-sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.2.64
+        version: 18.3.18
+      '@types/react-dom':
+        specifier: ^18.2.21
+        version: 18.3.5(@types/react@18.3.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.3.4(vite@4.5.9(@types/node@22.13.9))
+      vite:
+        specifier: ^4.5.2
+        version: 4.5.9(@types/node@22.13.9)
+      vite-plugin-node-polyfills:
+        specifier: ^0.23.0
+        version: 0.23.0(rollup@4.34.8)(vite@4.5.9(@types/node@22.13.9))
+
   examples/resolve:
     dependencies:
       '@txnlab/nfd-sdk':
@@ -840,6 +868,7 @@ packages:
 
   '@hey-api/client-fetch@0.8.1':
     resolution: {integrity: sha512-AaVNVLBl7N9Fun7QDnb00YDubAFjB9ICi5U6kmzcJSnnQTQGRMsuBBRupQV5ERdMMFt71zjSDym7Z+gLVe8m3A==}
+    deprecated: Starting with v0.73.0, this package is bundled directly inside @hey-api/openapi-ts.
 
   '@hey-api/json-schema-ref-parser@1.0.2':
     resolution: {integrity: sha512-F6LSkttZcT/XiX3ydeDqTY3uRN3BLJMwyMTk4kg/ichZlKUp3+3Odv0WokSmXGSoZGTW/N66FROMYAm5NPdJlA==}
@@ -6599,7 +6628,7 @@ snapshots:
     dependencies:
       '@babel/code-frame': 7.26.2
       index-to-position: 0.1.2
-      type-fest: 4.35.0
+      type-fest: 4.37.0
 
   parse-passwd@1.0.0: {}
 

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-import { NfdClient } from '../src/client'
-import { PurchasingModule } from '../src/modules/purchasing'
+import { NfdClient } from '../../src/client'
+import { PurchasingModule } from '../../src/modules/purchasing'
 
-import type { Nfd } from '../src/types'
+import type { Nfd } from '../../src/types'
 
 // Valid Algorand addresses for testing
 const BUYER_ADDRESS =

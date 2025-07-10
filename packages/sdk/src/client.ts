@@ -6,6 +6,7 @@ import { NfdApiClient } from './api-client'
 import { NfdRegistryId } from './constants'
 import { LookupModule } from './modules/lookup'
 import { NfdManager } from './modules/manager'
+import { MetadataModule } from './modules/metadata'
 import {
   MintingModule,
   NfdMintParams,
@@ -16,6 +17,7 @@ import { PurchasingModule, NfdPurchaseQuote } from './modules/purchasing'
 
 import type {
   Nfd,
+  NfdImageResult,
   ResolveOptions,
   SearchOptions,
   SearchResponse,
@@ -46,6 +48,7 @@ export class NfdClient {
 
   // Core modules
   private readonly _lookup: LookupModule
+  private readonly _metadata: MetadataModule
   private readonly _minting: MintingModule
   private readonly _purchasing: PurchasingModule
 
@@ -58,6 +61,7 @@ export class NfdClient {
 
     // Initialize modules
     this._lookup = new LookupModule(this)
+    this._metadata = new MetadataModule(this)
     this._minting = new MintingModule(this)
     this._purchasing = new PurchasingModule(this)
   }
@@ -329,5 +333,69 @@ export class NfdClient {
       ...options,
       state: ['forSale'],
     })
+  }
+
+  /**
+   * Get the avatar image information for an NFD
+   * @param nameOrAppId - The NFD name or application ID
+   * @returns The avatar image result with raw value, HTTPS URL, verification status, and ASA ID
+   * @remarks The URL will always be provided - either the actual avatar or a default fallback image
+   */
+  public async getAvatarImage(
+    nameOrAppId: string | number | bigint,
+  ): Promise<NfdImageResult>
+
+  /**
+   * Get the avatar image information for an NFD
+   * @param nfd - The NFD data object (for optimized parsing without additional resolve)
+   * @returns The avatar image result with raw value, HTTPS URL, verification status, and ASA ID
+   * @remarks The URL will always be provided - either the actual avatar or a default fallback image
+   */
+  public async getAvatarImage(nfd: Nfd): Promise<NfdImageResult>
+
+  /**
+   * Get the avatar image information for an NFD
+   * @param input - Either NFD name/application ID or NFD data object
+   * @returns The avatar image result with raw value, HTTPS URL, verification status, and ASA ID
+   */
+  public async getAvatarImage(
+    input: string | number | bigint | Nfd,
+  ): Promise<NfdImageResult> {
+    if (this._metadata.isNfdObject(input)) {
+      return this._metadata.getAvatarImage(input)
+    } else {
+      return this._metadata.getAvatarImage(input)
+    }
+  }
+
+  /**
+   * Get the banner image information for an NFD
+   * @param nameOrAppId - The NFD name or application ID
+   * @returns The banner image result with raw value, HTTPS URL, verification status, and ASA ID
+   */
+  public async getBannerImage(
+    nameOrAppId: string | number | bigint,
+  ): Promise<NfdImageResult>
+
+  /**
+   * Get the banner image information for an NFD
+   * @param nfd - The NFD data object (for optimized parsing without additional resolve)
+   * @returns The banner image result with raw value, HTTPS URL, verification status, and ASA ID
+   */
+  public async getBannerImage(nfd: Nfd): Promise<NfdImageResult>
+
+  /**
+   * Get the banner image information for an NFD
+   * @param input - Either NFD name/application ID or NFD data object
+   * @returns The banner image result with raw value, HTTPS URL, verification status, and ASA ID
+   */
+  public async getBannerImage(
+    input: string | number | bigint | Nfd,
+  ): Promise<NfdImageResult> {
+    if (this._metadata.isNfdObject(input)) {
+      return this._metadata.getBannerImage(input)
+    } else {
+      return this._metadata.getBannerImage(input)
+    }
   }
 }
