@@ -55,6 +55,9 @@
   "pnpm": {
     "overrides": {
       "@txnlab/nfd-sdk": "workspace:*"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
