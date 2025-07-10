@@ -69,6 +69,29 @@ const nfdData = await nfd.resolve('alice.algo', { view: 'brief' })
 const nfdDataById = await nfd.resolve('123456789')
 ```
 
+### Getting NFD Images (Avatar & Banner)
+
+```typescript
+import { NfdClient } from '@txnlab/nfd-sdk'
+
+const nfd = NfdClient.testNet()
+
+// Get avatar image with automatic fallback
+const avatarResult = await nfd.getAvatarImage('alice.algo')
+console.log(avatarResult.url) // Always returns a URL (fallback if needed)
+console.log(avatarResult.verified) // true if from verified NFT properties
+console.log(avatarResult.asaId) // ASA ID if verified image
+
+// Get banner image (may be null)
+const bannerResult = await nfd.getBannerImage('alice.algo')
+console.log(bannerResult.url) // May be null if no banner set
+
+// Fast path: If you already have NFD data
+const nfdData = await nfd.resolve('alice.algo', { view: 'full' })
+const avatar = await nfd.getAvatarImage(nfdData) // No additional resolve needed
+const banner = await nfd.getBannerImage(nfdData) // No additional resolve needed
+```
+
 ### Searching for NFDs
 
 ```typescript

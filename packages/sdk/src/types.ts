@@ -233,3 +233,19 @@ export type SearchResponse = Omit<NfdSearchV2Response, 'match-check'> & {
  * NFD record containing domain information and properties
  */
 export type Nfd = NfdRecord
+
+/**
+ * Result of resolving an NFD's avatar or banner image
+ */
+export interface NfdImageResult {
+  /** The raw value stored on-chain */
+  raw: string | null
+  /** A valid https:// URL (converted from ipfs:// if needed). For avatars, always provided (includes fallback). For banners, may be null. */
+  url: string | null
+  /** Whether the image is verified (stored in verified properties) */
+  verified: boolean
+  /** If verified, the ASA ID of the NFT image */
+  asaId: number | null
+  /** Whether this result uses a fallback default image (only for avatars) */
+  isFallback?: boolean
+}

@@ -7,6 +7,7 @@ export { NfdRegistryId } from './constants'
 // Export core/API types
 export type {
   Nfd,
+  NfdImageResult,
   ResolveOptions,
   ReverseLookupOptions,
   SearchOptions,
@@ -38,6 +39,9 @@ export {
   isSegmentMintingUnlocked,
   canMintSegment,
 } from './utils/nfd'
+
+// Export IPFS utility functions
+export { checkIpfsAvailability, isIpfsUrl } from './utils/ipfs'
 
 // Export error handling utilities
 export { parseTransactionError, withErrorParsing } from './utils/error-parser'
