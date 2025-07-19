@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^8.2.2",
-    "@txnlab/nfd-sdk": "^0.10.0",
+    "@txnlab/nfd-sdk": "^0.10.1",
     "@txnlab/use-wallet-react": "^4.0.0",
     "algosdk": "^3.2.0",
     "lute-connect": "^1.4.1",
