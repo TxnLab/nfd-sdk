@@ -293,7 +293,7 @@ describe('PurchasingModule', () => {
       expect(mockInstanceClient.newGroup().purchase).toHaveBeenCalledWith({
         args: { payment: { id: 'mock-txn' } },
         staticFee: expect.objectContaining({
-          amountInMicroAlgo: BigInt(4000),
+          amountInMicroAlgo: BigInt(9000),
         }),
       })
       expect(
@@ -360,7 +360,7 @@ describe('PurchasingModule', () => {
       expect(mockInstanceClient.newGroup().purchase).toHaveBeenCalledWith({
         args: { payment: { id: 'mock-txn' } },
         staticFee: expect.objectContaining({
-          amountInMicroAlgo: BigInt(4000),
+          amountInMicroAlgo: BigInt(9000),
         }),
       })
       expect(
