@@ -181,7 +181,7 @@ export class PurchasingModule extends BaseModule {
         .newGroup()
         .purchase({
           args: { payment: paymentTxn },
-          staticFee: AlgoAmount.MicroAlgos(4000), // 0.004 ALGO
+          staticFee: AlgoAmount.MicroAlgos(9000), // 0.009 ALGO
         })
         .send({ populateAppCallResources: true })
 
@@ -246,7 +246,7 @@ export class PurchasingModule extends BaseModule {
         .newGroup()
         .purchase({
           args: { payment: paymentTxn },
-          staticFee: AlgoAmount.MicroAlgos(4000), // 0.004 ALGO
+          staticFee: AlgoAmount.MicroAlgos(9000), // 0.009 ALGO
         })
         .send({ populateAppCallResources: true })
 
