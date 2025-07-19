@@ -1,5 +1,4 @@
-import { client } from './api/client.gen'
-import { nfdGetLookup, nfdGetNfd, nfdSearchV2 } from './api/sdk.gen'
+import { client, nfdGetLookup, nfdGetNfd, nfdSearchV2 } from '@txnlab/nfd-fetch'
 import { NfdApiBaseUrl, NfdRegistryId } from './constants'
 import { chunkArray } from './utils/internal/array'
 
