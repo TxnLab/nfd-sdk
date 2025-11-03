@@ -373,20 +373,17 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^8.2.2
-        version: 8.2.2(algosdk@3.2.0)
+        version: 8.2.2(algosdk@3.5.2)
       '@hey-api/client-fetch':
         specifier: ^0.8.1
         version: 0.8.1
-      algosdk:
-        specifier: ^3.2.0
-        version: 3.2.0
       crypto-js:
         specifier: ^4.2.0
         version: 4.2.0
     devDependencies:
       '@algorandfoundation/algokit-client-generator':
         specifier: ^4.0.8
-        version: 4.0.8(@algorandfoundation/algokit-utils@8.2.2(algosdk@3.2.0))(algosdk@3.2.0)
+        version: 4.0.8(@algorandfoundation/algokit-utils@8.2.2(algosdk@3.5.2))(algosdk@3.5.2)
       '@hey-api/openapi-ts':
         specifier: ^0.64.5
         version: 0.64.5(magicast@0.3.5)(typescript@5.7.3)
@@ -408,6 +405,9 @@ importers:
       '@vitest/ui':
         specifier: ^3.0.7
         version: 3.0.7(vitest@3.0.7)
+      algosdk:
+        specifier: ^3.5.2
+        version: 3.5.2
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -1453,6 +1453,10 @@ packages:
 
   algosdk@3.2.0:
     resolution: {integrity: sha512-iz7cRtv03vuYgQYp2IfLs+n512dxdjpalALZNiiFvreM7/oPmflfLkfD5dph/HUQwuJTomXx51LgiY19QP5ihg==}
+    engines: {node: '>=18.0.0'}
+
+  algosdk@3.5.2:
+    resolution: {integrity: sha512-frhGtZl1JvfrLRKmMvUm880wj4OiWsWo2FhbreNWh7pdFsKuWPj60fV682wt/CYefLI70iwHavPOwGBkTVt0VA==}
     engines: {node: '>=18.0.0'}
 
   alien-signals@0.4.14:
@@ -2832,6 +2836,7 @@ packages:
   node-domexception@1.0.0:
     resolution: {integrity: sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ==}
     engines: {node: '>=10.5.0'}
+    deprecated: Use your platform's native DOMException instead
 
   node-fetch-native@1.6.6:
     resolution: {integrity: sha512-8Mc2HhqPdlIfedsuZoc3yioPuzp6b+L5jRCRY1QzuWZh2EGJVQrGppC6V6cF0bLdbW0+O2YpqCA25aF/1lvipQ==}
@@ -3830,10 +3835,10 @@ packages:
 
 snapshots:
 
-  '@algorandfoundation/algokit-client-generator@4.0.8(@algorandfoundation/algokit-utils@8.2.2(algosdk@3.2.0))(algosdk@3.2.0)':
+  '@algorandfoundation/algokit-client-generator@4.0.8(@algorandfoundation/algokit-utils@8.2.2(algosdk@3.5.2))(algosdk@3.5.2)':
     dependencies:
-      '@algorandfoundation/algokit-utils': 8.2.2(algosdk@3.2.0)
-      algosdk: 3.2.0
+      '@algorandfoundation/algokit-utils': 8.2.2(algosdk@3.5.2)
+      algosdk: 3.5.2
       chalk: 4.1.2
       change-case: 5.4.4
       commander: 11.1.0
@@ -3842,6 +3847,11 @@ snapshots:
   '@algorandfoundation/algokit-utils@8.2.2(algosdk@3.2.0)':
     dependencies:
       algosdk: 3.2.0
+      buffer: 6.0.3
+
+  '@algorandfoundation/algokit-utils@8.2.2(algosdk@3.5.2)':
+    dependencies:
+      algosdk: 3.5.2
       buffer: 6.0.3
 
   '@ampproject/remapping@2.3.0':
@@ -4850,6 +4860,17 @@ snapshots:
   algorand-msgpack@1.1.0: {}
 
   algosdk@3.2.0:
+    dependencies:
+      algorand-msgpack: 1.1.0
+      hi-base32: 0.5.1
+      js-sha256: 0.9.0
+      js-sha3: 0.8.0
+      js-sha512: 0.8.0
+      json-bigint: 1.0.0
+      tweetnacl: 1.0.3
+      vlq: 2.0.4
+
+  algosdk@3.5.2:
     dependencies:
       algorand-msgpack: 1.1.0
       hi-base32: 0.5.1

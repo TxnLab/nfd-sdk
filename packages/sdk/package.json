@@ -68,8 +68,10 @@
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^8.2.2",
     "@hey-api/client-fetch": "^0.8.1",
-    "algosdk": "^3.2.0",
     "crypto-js": "^4.2.0"
+  },
+  "peerDependencies": {
+    "algosdk": "^3.0.0"
   },
   "devDependencies": {
     "@algorandfoundation/algokit-client-generator": "^4.0.8",
@@ -80,6 +82,7 @@
     "@types/node-fetch": "^2.6.12",
     "@vitest/coverage-v8": "^3.0.7",
     "@vitest/ui": "^3.0.7",
+    "algosdk": "^3.5.2",
     "dotenv": "^16.4.7",
     "node-fetch": "^3.3.2",
     "publint": "^0.3.6",
