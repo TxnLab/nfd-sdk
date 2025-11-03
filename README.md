@@ -28,15 +28,17 @@ Once we reach v1.0.0 with all planned features, breaking changes will only be in
 
 ## Installation
 
+The SDK requires `algosdk` as a peer dependency. Install both packages:
+
 ```bash
 # npm
-npm install @txnlab/nfd-sdk
+npm install @txnlab/nfd-sdk algosdk
 
 # yarn
-yarn add @txnlab/nfd-sdk
+yarn add @txnlab/nfd-sdk algosdk
 
 # pnpm
-pnpm add @txnlab/nfd-sdk
+pnpm add @txnlab/nfd-sdk algosdk
 ```
 
 ## Quick Start

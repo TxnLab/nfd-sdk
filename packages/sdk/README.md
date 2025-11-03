@@ -2,41 +2,19 @@
 
 SDK for interacting with NFDomains (NFD) API and Algorand blockchain. This package provides methods for domain resolution, record fetching, minting, and address linking operations.
 
-## Versioning
-
-This SDK is in early development (pre-1.0.0) and may introduce breaking changes despite our best efforts to avoid them. We recommend pinning the version in your package.json:
-
-```json
-{
-  "dependencies": {
-    "@txnlab/nfd-sdk": "0.1.2"
-  }
-}
-```
-
-Instead of using caret versioning:
-
-```json
-{
-  "dependencies": {
-    "@txnlab/nfd-sdk": "^0.1.2"
-  }
-}
-```
-
-Once we reach v1.0.0 with all planned features, breaking changes will only be introduced via major version bumps following semantic versioning.
-
 ## Installation
+
+The SDK requires `algosdk` as a peer dependency. Install both packages:
 
 ```bash
 # npm
-npm install @txnlab/nfd-sdk
+npm install @txnlab/nfd-sdk algosdk
 
 # yarn
-yarn add @txnlab/nfd-sdk
+yarn add @txnlab/nfd-sdk algosdk
 
 # pnpm
-pnpm add @txnlab/nfd-sdk
+pnpm add @txnlab/nfd-sdk algosdk
 ```
 
 ## Quick Start
