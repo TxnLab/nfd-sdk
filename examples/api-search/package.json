@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@txnlab/nfd-sdk": "^0.10.1",
+    "@txnlab/nfd-sdk": "^1.0.0",
     "algosdk": "^3.5.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
