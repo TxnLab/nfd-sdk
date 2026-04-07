@@ -1,5 +1,12 @@
 import { client } from './api/client.gen'
-import { nfdGetLookup, nfdGetNfd, nfdSearchV2 } from './api/sdk.gen'
+import {
+  nfdGetLookup,
+  nfdGetNfd,
+  nfdSearchV2,
+  nfdSuggest,
+  nfdVerifyConfirm,
+  nfdVerifyRequest,
+} from './api/sdk.gen'
 import { NfdApiBaseUrl, NfdRegistryId } from './constants'
 import { chunkArray } from './utils/internal/array'
 
@@ -7,8 +14,12 @@ import type {
   Nfd,
   SearchOptions,
   SearchResponse,
+  SuggestOptions,
   ReverseLookupOptions,
   ResolveOptions,
+  VerifyField,
+  VerifyRequestResult,
+  VerifyConfirmResult,
 } from './types'
 
 /**
@@ -211,6 +222,74 @@ export class NfdApiClient {
       ...response.data,
       nfds: response.data.nfds.map((nfd) => nfd as Nfd),
     }
+  }
+
+  /**
+   * Get name suggestions for NFD registration
+   * @param name - The name (even partial) to search for
+   * @param options - Suggestion options including the buyer address
+   * @returns Array of suggested NFD records
+   */
+  public async suggest(name: string, options: SuggestOptions): Promise<Nfd[]> {
+    const response = await nfdSuggest({
+      client: this._client,
+      path: { name },
+      query: {
+        buyer: options.buyer,
+        limit: options.limit,
+        view: options.view,
+      },
+      throwOnError: true,
+    })
+
+    return (response.data ?? []) as Nfd[]
+  }
+
+  /**
+   * Start a verification request for an NFD property
+   * @param name - The NFD name to verify a property for
+   * @param sender - The NFD owner's address
+   * @param field - The field to verify
+   * @returns Verification request result with challenge and ID
+   */
+  public async verifyRequest(
+    name: string,
+    sender: string,
+    field: VerifyField,
+  ): Promise<VerifyRequestResult> {
+    const response = await nfdVerifyRequest({
+      client: this._client,
+      body: {
+        name,
+        sender,
+        fieldToVerify: field,
+      },
+      throwOnError: true,
+    })
+
+    return response.data
+  }
+
+  /**
+   * Confirm a verification request
+   * @param id - The verification request ID
+   * @param challenge - The challenge value (optional depending on verification type)
+   * @returns Verification confirmation result
+   */
+  public async verifyConfirm(
+    id: string,
+    challenge?: string,
+  ): Promise<VerifyConfirmResult> {
+    const response = await nfdVerifyConfirm({
+      client: this._client,
+      path: { id },
+      body: {
+        challenge,
+      },
+      throwOnError: true,
+    })
+
+    return response.data
   }
 
   /**

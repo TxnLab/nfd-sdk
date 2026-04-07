@@ -1,13 +1,19 @@
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
 import { Address } from 'algosdk'
 
+import { ALGORAND_ZERO_ADDRESS } from '../constants'
 import { parseTransactionError } from '../utils/error-parser'
 import { strToUint8Array, concatUint8Arrays } from '../utils/internal/bytes'
 
 import { BaseModule } from './base'
 
 import type { NfdClient } from '../client'
-import type { Nfd } from '../types'
+import type {
+  Nfd,
+  ListForSaleOptions,
+  SendToVaultOptions,
+  SendFromVaultOptions,
+} from '../types'
 
 /**
  * Manager for operations on a specific NFD
@@ -434,6 +440,398 @@ export class NfdManager extends BaseModule {
     } catch (error) {
       throw new Error(
         `Failed to set primary NFD: ${parseTransactionError(error)}`,
+      )
+    }
+
+    // Refresh the NFD data
+    this._nfd = null
+    return this.getNfd()
+  }
+
+  /**
+   * Get the renewal price for the NFD (per year, in microAlgos)
+   * @returns The renewal price per year in microAlgos
+   * @throws If the price cannot be retrieved
+   */
+  public async getRenewalPrice(): Promise<bigint> {
+    const nfd = await this.getNfd()
+
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    const nfdAppId = BigInt(nfd.appID)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId)
+
+    try {
+      const result = await nfdInstanceClient
+        .newGroup()
+        .getRenewPrice()
+        .simulate({ skipSignatures: true, allowUnnamedResources: true })
+
+      const price = result.returns[0]
+      if (price === undefined) {
+        throw new Error('No price returned')
+      }
+
+      return BigInt(price)
+    } catch (error) {
+      throw new Error(
+        `Failed to get renewal price: ${parseTransactionError(error)}`,
+      )
+    }
+  }
+
+  /**
+   * Renew the NFD
+   * @param years - Number of years to renew for (1-20, default 1)
+   * @returns The updated NFD
+   * @throws If the renewal fails
+   */
+  public async renew(years: number = 1): Promise<Nfd> {
+    const signer = this.requireSigner()
+    const nfd = await this.getNfd()
+
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    const nfdAppId = BigInt(nfd.appID)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
+
+    // Get the renewal price per year
+    const pricePerYear = await this.getRenewalPrice()
+    const totalPrice = pricePerYear * BigInt(years)
+
+    // Create the payment transaction
+    const paymentTxn = await this.algorand.createTransaction.payment({
+      sender: signer.addr,
+      receiver: nfdInstanceClient.appAddress,
+      amount: AlgoAmount.MicroAlgos(totalPrice),
+    })
+
+    try {
+      await nfdInstanceClient
+        .newGroup()
+        .renew({
+          args: { payment: paymentTxn },
+          staticFee: AlgoAmount.MicroAlgos(5000),
+        })
+        .send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(`Failed to renew NFD: ${parseTransactionError(error)}`)
+    }
+
+    // Refresh the NFD data
+    this._nfd = null
+    return this.getNfd()
+  }
+
+  /**
+   * List the NFD for sale on the marketplace
+   * @param price - The sale price in microAlgos
+   * @param options - Optional sale configuration
+   * @returns The updated NFD
+   * @throws If the listing fails
+   */
+  public async listForSale(
+    price: bigint | number,
+    options: ListForSaleOptions = {},
+  ): Promise<Nfd> {
+    const signer = this.requireSigner()
+    const nfd = await this.getNfd()
+
+    if (signer.addr.toString() !== nfd.owner) {
+      throw new Error('Only the owner can list this NFD for sale')
+    }
+
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    const nfdAppId = BigInt(nfd.appID)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
+
+    const reservedFor = options.reservedFor ?? ALGORAND_ZERO_ADDRESS
+
+    try {
+      await nfdInstanceClient
+        .newGroup()
+        .offerForSale({
+          args: {
+            sellAmount: BigInt(price),
+            reservedFor,
+          },
+          staticFee: AlgoAmount.MicroAlgos(3000),
+        })
+        .send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(
+        `Failed to list NFD for sale: ${parseTransactionError(error)}`,
+      )
+    }
+
+    // Refresh the NFD data
+    this._nfd = null
+    return this.getNfd()
+  }
+
+  /**
+   * Cancel the sale listing for the NFD
+   * @returns The updated NFD
+   * @throws If the cancellation fails
+   */
+  public async cancelSale(): Promise<Nfd> {
+    const signer = this.requireSigner()
+    const nfd = await this.getNfd()
+
+    if (signer.addr.toString() !== nfd.owner) {
+      throw new Error('Only the owner can cancel the sale of this NFD')
+    }
+
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    const nfdAppId = BigInt(nfd.appID)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
+
+    try {
+      await nfdInstanceClient
+        .newGroup()
+        .cancelSale({
+          args: {},
+          staticFee: AlgoAmount.MicroAlgos(3000),
+        })
+        .send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(
+        `Failed to cancel sale: ${parseTransactionError(error)}`,
+      )
+    }
+
+    // Refresh the NFD data
+    this._nfd = null
+    return this.getNfd()
+  }
+
+  /**
+   * Lock or unlock segment minting for the NFD
+   * @param lock - Whether to lock (true) or unlock (false) segment minting
+   * @param usdPrice - The price in USD cents for minting segments (e.g., 300 = $3.00). Set to 0 if locking.
+   * @returns The updated NFD
+   * @throws If the operation fails
+   */
+  public async lockSegment(
+    lock: boolean,
+    usdPrice: number = 0,
+  ): Promise<Nfd> {
+    const signer = this.requireSigner()
+    const nfd = await this.getNfd()
+
+    if (signer.addr.toString() !== nfd.owner) {
+      throw new Error('Only the owner can lock/unlock segments for this NFD')
+    }
+
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    const nfdAppId = BigInt(nfd.appID)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
+
+    try {
+      await nfdInstanceClient
+        .newGroup()
+        .segmentLock({
+          args: {
+            lock,
+            usdPrice: BigInt(usdPrice),
+          },
+          staticFee: AlgoAmount.MicroAlgos(3000),
+        })
+        .send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(
+        `Failed to ${lock ? 'lock' : 'unlock'} segments: ${parseTransactionError(error)}`,
+      )
+    }
+
+    // Refresh the NFD data
+    this._nfd = null
+    return this.getNfd()
+  }
+
+  /**
+   * Lock or unlock vault opt-ins for the NFD
+   * @param lock - Whether to lock (true) or unlock (false) vault opt-ins.
+   *   When locked, only the owner can opt the vault into assets.
+   *   When unlocked, anyone can opt the vault into assets.
+   * @returns The updated NFD
+   * @throws If the operation fails
+   */
+  public async lockVault(lock: boolean): Promise<Nfd> {
+    const signer = this.requireSigner()
+    const nfd = await this.getNfd()
+
+    if (signer.addr.toString() !== nfd.owner) {
+      throw new Error('Only the owner can lock/unlock the vault for this NFD')
+    }
+
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    const nfdAppId = BigInt(nfd.appID)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
+
+    try {
+      await nfdInstanceClient
+        .newGroup()
+        .vaultOptInLock({
+          args: { lock },
+          staticFee: AlgoAmount.MicroAlgos(3000),
+        })
+        .send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(
+        `Failed to ${lock ? 'lock' : 'unlock'} vault: ${parseTransactionError(error)}`,
+      )
+    }
+
+    // Refresh the NFD data
+    this._nfd = null
+    return this.getNfd()
+  }
+
+  /**
+   * Opt the NFD vault into assets and optionally transfer them
+   * @param assets - Array of ASA IDs to opt into (use 0 for ALGO)
+   * @param options - Options for the vault operation
+   * @returns The updated NFD
+   * @throws If the operation fails
+   */
+  public async sendToVault(
+    assets: number[],
+    options: SendToVaultOptions = {},
+  ): Promise<Nfd> {
+    const signer = this.requireSigner()
+    const nfd = await this.getNfd()
+
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    const nfdAppId = BigInt(nfd.appID)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
+
+    // Calculate fees based on number of assets
+    const feePerAsset = 1000n
+    const baseFee = 3000n
+    const totalFee = baseFee + feePerAsset * BigInt(assets.length)
+
+    try {
+      const group = nfdInstanceClient.newGroup()
+
+      // Opt the vault into the assets
+      group.vaultOptIn({
+        args: { assets: assets.map(BigInt) },
+        staticFee: AlgoAmount.MicroAlgos(totalFee),
+      })
+
+      // If not opt-in only, add asset transfer transactions
+      if (!options.optInOnly && assets.length > 0) {
+        const vaultAddress = nfd.nfdAccount
+        if (!vaultAddress) {
+          throw new Error('NFD has no vault account')
+        }
+
+        for (const assetId of assets) {
+          if (assetId === 0) {
+            // ALGO transfer
+            const paymentTxn =
+              await this.algorand.createTransaction.payment({
+                sender: signer.addr,
+                receiver: vaultAddress,
+                amount: AlgoAmount.MicroAlgos(options.amount ?? 0n),
+                note: options.note,
+              })
+            group.addTransaction(paymentTxn)
+          } else {
+            // ASA transfer
+            const assetTxn =
+              await this.algorand.createTransaction.assetTransfer({
+                sender: signer.addr,
+                receiver: vaultAddress,
+                assetId: BigInt(assetId),
+                amount: options.amount ?? 0n,
+                note: options.note,
+              })
+            group.addTransaction(assetTxn)
+          }
+        }
+      }
+
+      await group.send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(
+        `Failed to send to vault: ${parseTransactionError(error)}`,
+      )
+    }
+
+    // Refresh the NFD data
+    this._nfd = null
+    return this.getNfd()
+  }
+
+  /**
+   * Send assets from the NFD vault to a receiver
+   * @param assets - Array of ASA IDs to send from the vault
+   * @param receiver - The receiving Algorand address or NFD name
+   * @param options - Options for the vault operation
+   * @returns The updated NFD
+   * @throws If the operation fails
+   */
+  public async sendFromVault(
+    assets: number[],
+    receiver: string,
+    options: SendFromVaultOptions = {},
+  ): Promise<Nfd> {
+    const signer = this.requireSigner()
+    const nfd = await this.getNfd()
+
+    if (signer.addr.toString() !== nfd.owner) {
+      throw new Error('Only the owner can send from the vault')
+    }
+
+    if (!nfd.appID) {
+      throw new Error('NFD has no application ID')
+    }
+    if (assets.length === 0) {
+      throw new Error('At least one asset must be specified')
+    }
+
+    const nfdAppId = BigInt(nfd.appID)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
+
+    const primaryAsset = BigInt(assets[0])
+    const otherAssets = assets.slice(1).map(BigInt)
+
+    // Calculate fees based on number of assets
+    const feePerAsset = 1000n
+    const baseFee = 3000n
+    const totalFee = baseFee + feePerAsset * BigInt(assets.length)
+
+    try {
+      await nfdInstanceClient
+        .newGroup()
+        .vaultSend({
+          args: {
+            amount: options.amount ?? 0n,
+            receiver,
+            note: options.note ?? '',
+            asset: primaryAsset,
+            otherAssets,
+          },
+          staticFee: AlgoAmount.MicroAlgos(totalFee),
+        })
+        .send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(
+        `Failed to send from vault: ${parseTransactionError(error)}`,
       )
     }
 

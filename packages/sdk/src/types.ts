@@ -1,4 +1,9 @@
-import type { NfdRecord, NfdSearchV2Response } from './api/types.gen'
+import type {
+  NfdRecord,
+  NfdSearchV2Response,
+  VerifyConfirmResponseBody,
+  VerifyRequestResponseBody,
+} from './api/types.gen'
 
 /**
  * Configuration options for resolving an NFD
@@ -249,3 +254,102 @@ export interface NfdImageResult {
   /** Whether this result uses a fallback default image (only for avatars) */
   isFallback?: boolean
 }
+
+/**
+ * Configuration options for suggesting NFD names
+ */
+export interface SuggestOptions {
+  /**
+   * The buyer's Algorand address (required for eligibility filtering)
+   */
+  buyer: string
+
+  /**
+   * Limit the number of results returned
+   * @default 20
+   * @maximum 40
+   */
+  limit?: number
+
+  /**
+   * View of data to return
+   * @default 'brief'
+   */
+  view?: 'brief' | 'full'
+}
+
+/**
+ * Options for listing an NFD for sale
+ */
+export interface ListForSaleOptions {
+  /**
+   * Reserve the sale for a specific address
+   */
+  reservedFor?: string
+}
+
+/**
+ * Options for sending assets to a vault
+ */
+export interface SendToVaultOptions {
+  /**
+   * Whether to only opt the vault into the asset(s) without transferring
+   * @default false
+   */
+  optInOnly?: boolean
+
+  /**
+   * Amount to send in base units of the asset. Required when sending a single asset.
+   * Ignored when sending multiple assets (all of each asset is sent).
+   */
+  amount?: bigint
+
+  /**
+   * Optional note to include in the transaction
+   */
+  note?: string
+}
+
+/**
+ * Options for sending assets from a vault
+ */
+export interface SendFromVaultOptions {
+  /**
+   * Amount to send in base units of the asset. Required when sending a single asset.
+   * Ignored when sending multiple assets (all of each asset is sent).
+   */
+  amount?: bigint
+
+  /**
+   * Optional note to include in the transaction
+   */
+  note?: string
+
+  /**
+   * Type of receiver
+   * @default 'account'
+   */
+  receiverType?: 'account' | 'nfdVault'
+}
+
+/**
+ * Field types that can be verified on an NFD
+ */
+export type VerifyField =
+  | 'blueskydid'
+  | 'twitter'
+  | 'github'
+  | 'domain'
+  | 'email'
+  | 'avatar'
+  | 'banner'
+
+/**
+ * Result of starting a verification request
+ */
+export type VerifyRequestResult = VerifyRequestResponseBody
+
+/**
+ * Result of confirming a verification
+ */
+export type VerifyConfirmResult = VerifyConfirmResponseBody

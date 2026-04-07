@@ -292,4 +292,47 @@ export class PurchasingModule extends BaseModule {
       return false
     }
   }
+
+  /**
+   * Make an offer to purchase an NFD from its owner
+   * @param nameOrAppId - The NFD name or application ID to make an offer on
+   * @param amount - The offer amount in microAlgos
+   * @param note - Optional note to the owner
+   * @returns The NFD record
+   * @throws If the offer fails
+   */
+  public async makeOffer(
+    nameOrAppId: string | number | bigint,
+    amount: bigint | number,
+    note: string = '',
+  ): Promise<Nfd> {
+    const signer = this.requireSigner()
+
+    const nfd = await this.client.resolve(nameOrAppId, { view: 'full' })
+    if (!nfd.appID) {
+      throw new Error(`Cannot determine app ID for NFD: ${nfd.name}`)
+    }
+
+    const nfdInstanceClient = this.getInstanceClient(
+      BigInt(nfd.appID),
+      signer.addr,
+    )
+
+    try {
+      await nfdInstanceClient
+        .newGroup()
+        .postOffer({
+          args: {
+            offer: BigInt(amount),
+            note,
+          },
+          staticFee: AlgoAmount.MicroAlgos(3000),
+        })
+        .send({ populateAppCallResources: true })
+    } catch (error) {
+      throw new Error(`Failed to make offer: ${parseTransactionError(error)}`)
+    }
+
+    return this.client.resolve(nameOrAppId, { view: 'full' })
+  }
 }

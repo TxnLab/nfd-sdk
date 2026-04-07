@@ -6,12 +6,19 @@ export { NfdRegistryId } from './constants'
 
 // Export core/API types
 export type {
+  ListForSaleOptions,
   Nfd,
   NfdImageResult,
   ResolveOptions,
   ReverseLookupOptions,
   SearchOptions,
   SearchResponse,
+  SendFromVaultOptions,
+  SendToVaultOptions,
+  SuggestOptions,
+  VerifyConfirmResult,
+  VerifyField,
+  VerifyRequestResult,
 } from './types'
 
 // Export API client

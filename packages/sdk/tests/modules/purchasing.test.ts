@@ -90,6 +90,9 @@ const mockInstanceClient: MockInstanceClient = {
     purchase: vi.fn().mockReturnValue({
       send: vi.fn().mockResolvedValue({}),
     }),
+    postOffer: vi.fn().mockReturnValue({
+      send: vi.fn().mockResolvedValue({}),
+    }),
   }),
 }
 
@@ -431,6 +434,71 @@ describe('PurchasingModule', () => {
     it('should return false on error', async () => {
       const result = await purchasing.canBuy('nonexistent.algo', BUYER_ADDRESS)
       expect(result).toBe(false)
+    })
+  })
+
+  describe('makeOffer', () => {
+    it('should successfully make an offer on an NFD', async () => {
+      const result = await purchasing.makeOffer('forsale.algo', 5000000n, 'I want this NFD')
+
+      expect(mockInstanceClient.newGroup).toHaveBeenCalled()
+      expect(mockInstanceClient.newGroup().postOffer).toHaveBeenCalledWith({
+        args: {
+          offer: 5000000n,
+          note: 'I want this NFD',
+        },
+        staticFee: expect.objectContaining({
+          amountInMicroAlgo: 3000n,
+        }),
+      })
+      expect(
+        mockInstanceClient.newGroup().postOffer().send,
+      ).toHaveBeenCalledWith({
+        populateAppCallResources: true,
+      })
+
+      // Should re-resolve the NFD after the offer
+      expect(client.resolve).toHaveBeenCalledTimes(2)
+      expect(result).toEqual(mockForSaleNfd)
+    })
+
+    it('should accept numeric amount', async () => {
+      await purchasing.makeOffer('forsale.algo', 5000000)
+
+      expect(mockInstanceClient.newGroup().postOffer).toHaveBeenCalledWith({
+        args: {
+          offer: 5000000n,
+          note: '',
+        },
+        staticFee: expect.objectContaining({
+          amountInMicroAlgo: 3000n,
+        }),
+      })
+    })
+
+    it('should throw error if NFD has no appID', async () => {
+      const noAppIdNfd: Nfd = {
+        name: 'noapp.algo',
+        state: 'forSale',
+        owner: SELLER_ADDRESS,
+      }
+      vi.spyOn(client, 'resolve').mockResolvedValueOnce(noAppIdNfd)
+
+      await expect(
+        purchasing.makeOffer('noapp.algo', 5000000n),
+      ).rejects.toThrow('Cannot determine app ID for NFD: noapp.algo')
+    })
+
+    it('should wrap transaction errors', async () => {
+      mockInstanceClient.newGroup.mockReturnValueOnce({
+        postOffer: vi.fn().mockReturnValue({
+          send: vi.fn().mockRejectedValue(new Error('txn failed')),
+        }),
+      })
+
+      await expect(
+        purchasing.makeOffer('forsale.algo', 5000000n),
+      ).rejects.toThrow('Failed to make offer: txn failed')
     })
   })
 

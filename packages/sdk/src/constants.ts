@@ -10,6 +10,10 @@ export enum DefaultSender {
   TESTNET = 'A7NMWS3NT3IUDMLVO26ULGXGIIOUQ3ND2TXSER6EBGRZNOBOUIQXHIBGDE',
 }
 
+/** The Algorand zero address (all zeros, used as a placeholder for "no address") */
+export const ALGORAND_ZERO_ADDRESS =
+  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ'
+
 /** The base URLs for the NFD API for each network */
 export enum NfdApiBaseUrl {
   MAINNET = 'https://api.nf.domains',
