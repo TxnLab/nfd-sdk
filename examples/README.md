@@ -5,6 +5,7 @@ This directory contains example applications demonstrating various features of t
 ## Available Examples
 
 - [Resolve](./resolve/): Demonstrates how to resolve NFD names and application IDs
+- [Lookup-only](./lookup/): Minimal Node script using the slim `@txnlab/nfd-sdk/lookup` entry for forward and on-chain reverse resolution
 - [NFD Metadata](./nfd-metadata/): Demonstrates how to resolve avatar and banner images with IPFS support
 - [API Search](./api-search/): Demonstrates how to use the API client to search for NFDs
 - [Reverse Lookup](./reverse-lookup/): Demonstrates how to look up NFDs by wallet address

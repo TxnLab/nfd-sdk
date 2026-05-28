@@ -4,11 +4,15 @@ import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
 
+const entryNames = ['index', 'lookup']
+
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'nfd-sdk',
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        lookup: resolve(__dirname, 'src/lookup-entry.ts'),
+      },
     },
     outDir: 'dist',
     rollupOptions: {
@@ -16,16 +20,17 @@ export default defineConfig({
         'algosdk',
         '@algorandfoundation/algokit-utils',
         '@hey-api/client-fetch',
-        'crypto-js',
       ],
       output: [
         {
           format: 'es',
           dir: 'dist/esm',
-          entryFileNames: 'index.js',
+          entryFileNames: '[name].js',
           preserveModules: false,
           exports: 'named',
-          // Split the large contract clients into a separate chunk
+          // Split the large contract clients into a separate chunk. This is
+          // only reachable from the main `index` entry; the `lookup` entry
+          // never imports the generated typed clients.
           manualChunks: {
             'nfd-contracts': [
               'src/contracts/NFDInstanceClient.ts',
@@ -36,7 +41,7 @@ export default defineConfig({
         {
           format: 'cjs',
           dir: 'dist/cjs',
-          entryFileNames: 'index.cjs',
+          entryFileNames: '[name].cjs',
           preserveModules: false,
           exports: 'named',
         },
@@ -63,16 +68,18 @@ export default defineConfig({
       compilerOptions: {
         declarationMap: true,
       },
-      // Use afterBuild hook to copy .d.ts to .d.cts
+      // Copy each entry's bundled .d.ts to a .d.cts for CommonJS consumers
       afterBuild: async () => {
-        try {
-          const dtsPath = resolve(__dirname, 'dist/types/index.d.ts')
-          const dctsPath = resolve(__dirname, 'dist/types/index.d.cts')
-          const content = await fs.readFile(dtsPath, 'utf-8')
-          await fs.writeFile(dctsPath, content)
-          console.log('Successfully created .d.cts file')
-        } catch (error) {
-          console.error('Error creating .d.cts file:', error)
+        for (const name of entryNames) {
+          try {
+            const dtsPath = resolve(__dirname, `dist/types/${name}.d.ts`)
+            const dctsPath = resolve(__dirname, `dist/types/${name}.d.cts`)
+            const content = await fs.readFile(dtsPath, 'utf-8')
+            await fs.writeFile(dctsPath, content)
+            console.log(`Successfully created ${name}.d.cts file`)
+          } catch (error) {
+            console.error(`Error creating ${name}.d.cts file:`, error)
+          }
         }
       },
     }),

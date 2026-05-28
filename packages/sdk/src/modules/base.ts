@@ -1,11 +1,14 @@
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account'
-import { Address, decodeUint64 } from 'algosdk'
-import crypto from 'crypto-js'
+import { Address } from 'algosdk'
 
 import { DefaultSender, NfdRegistryId } from '../constants'
 import { NfdInstanceClient } from '../contracts/NFDInstanceClient'
 import { NfdRegistryClient } from '../contracts/NFDRegistryClient'
+import {
+  decodeAppIdFromNameBox,
+  getNameBoxName,
+} from '../utils/internal/registry-box'
 
 import type { NfdClient } from '../client'
 import type { Constraints } from '../contracts/NFDRegistryClient'
@@ -87,17 +90,8 @@ export abstract class BaseModule {
    * @param nfdName - The NFD name to get the box name for
    * @returns The box name as a Uint8Array
    */
-  protected getRegistryBoxNameForNFD(nfdName: string): Uint8Array {
-    const hash = crypto.SHA256(`name/${nfdName}`)
-    const wordArray = crypto.enc.Hex.parse(hash.toString())
-    const u8 = new Uint8Array(wordArray.words.length * 4)
-    wordArray.words.forEach((word: number, i: number) => {
-      u8[i * 4 + 0] = (word >> 24) & 0xff
-      u8[i * 4 + 1] = (word >> 16) & 0xff
-      u8[i * 4 + 2] = (word >> 8) & 0xff
-      u8[i * 4 + 3] = word & 0xff
-    })
-    return u8
+  protected getRegistryBoxNameForNFD(nfdName: string): Promise<Uint8Array> {
+    return getNameBoxName(nfdName)
   }
 
   /**
@@ -107,15 +101,14 @@ export abstract class BaseModule {
    */
   protected async getAppIdFromName(name: string): Promise<bigint | null> {
     const registryClient = this.getRegistryClient()
-    const boxName = this.getRegistryBoxNameForNFD(name)
+    const boxName = await this.getRegistryBoxNameForNFD(name)
     try {
       const appIdBytes = await registryClient.appClient.getBoxValue(boxName)
       if (!appIdBytes) {
         return null
       }
       // Take the second 8 bytes for the app ID (bytes 8-15)
-      const appIdBytesSliced = appIdBytes.slice(8, 16)
-      return decodeUint64(appIdBytesSliced, 'bigint')
+      return decodeAppIdFromNameBox(appIdBytes)
     } catch (error) {
       // Check if error is a 404 response
       if (error instanceof Error && error.message.includes('404')) {
