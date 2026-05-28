@@ -3,6 +3,7 @@
   "private": true,
   "description": "Monorepo for NFDomains SDK and related packages",
   "type": "module",
+  "packageManager": "pnpm@10.30.3",
   "scripts": {
     "build": "pnpm --filter @txnlab/nfd-sdk build",
     "build:examples": "pnpm --filter './examples/*' build",
@@ -10,7 +11,8 @@
     "lint": "pnpm -r lint",
     "format": "pnpm -r format",
     "typecheck": "pnpm --filter @txnlab/nfd-sdk typecheck",
-    "cipublish": "node scripts/publish.js",
+    "ci": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run build:examples",
+    "release": "pnpm run ci && semantic-release",
     "fresh-install": "rm -rf node_modules packages/*/node_modules examples/*/node_modules && pnpm install"
   },
   "keywords": [
@@ -33,10 +35,16 @@
   "homepage": "https://github.com/TxnLab/nfd-sdk#readme",
   "engines": {
     "node": ">=22",
-    "pnpm": ">=9"
+    "pnpm": ">=10"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.8",
+    "@semantic-release/npm": "^13.1.5",
+    "@semantic-release/release-notes-generator": "^14.1.1",
     "@tanstack/config": "^0.16.2",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
     "@typescript-eslint/parser": "^8.24.1",
@@ -50,6 +58,7 @@
     "eslint-plugin-unicorn": "^57.0.0",
     "globals": "^14.0.0",
     "prettier": "^3.5.1",
+    "semantic-release": "^25.0.3",
     "typescript": "^5.5.3"
   },
   "pnpm": {

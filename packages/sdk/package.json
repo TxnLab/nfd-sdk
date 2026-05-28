@@ -42,11 +42,12 @@
   },
   "homepage": "https://github.com/TxnLab/nfd-sdk#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "engines": {
     "node": ">=22",
-    "pnpm": ">=9"
+    "pnpm": ">=10"
   },
   "scripts": {
     "build": "vite build && publint --strict",
