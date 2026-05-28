@@ -23,6 +23,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version-file: '.nvmrc'
+          # pnpm is installed in a later step; this workflow caches the pnpm
+          # store manually below, so disable setup-node's auto cache (default
+          # changed to true in v5 and runs before pnpm is on PATH).
+          package-manager-cache: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
