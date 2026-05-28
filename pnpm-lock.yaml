@@ -410,9 +410,6 @@ importers:
       '@hey-api/client-fetch':
         specifier: ^0.8.1
         version: 0.8.1
-      crypto-js:
-        specifier: ^4.2.0
-        version: 4.2.0
     devDependencies:
       '@algorandfoundation/algokit-client-generator':
         specifier: ^4.0.8
@@ -423,9 +420,6 @@ importers:
       '@tanstack/config':
         specifier: ^0.16.2
         version: 0.16.3(@types/node@22.13.9)(esbuild@0.25.0)(eslint@9.39.0(jiti@2.4.2))(rollup@4.34.8)(typescript@5.9.3)(vite@6.2.0(@types/node@22.13.9)(jiti@2.4.2)(tsx@4.19.3)(yaml@2.7.0))
-      '@types/crypto-js':
-        specifier: ^4.2.2
-        version: 4.2.2
       '@types/node':
         specifier: ^22.13.9
         version: 22.13.9
@@ -1461,9 +1455,6 @@ packages:
   '@types/conventional-commits-parser@5.0.1':
     resolution: {integrity: sha512-7uz5EHdzz2TqoMfV7ee61Egf5y6NkcO4FB/1iCCQnbeiI1F3xzv3vK5dBCXUCLQgGYS+mUeigK1iKQzvED+QnQ==}
 
-  '@types/crypto-js@4.2.2':
-    resolution: {integrity: sha512-sDOLlVbHhXpAUAL0YHDUUwDZf3iN4Bwi4W6a0W0b+QcAezUbRtH4FVb+9J4h+XFPW7l/gQ9F8qC7P+Ec4k8QVQ==}
-
   '@types/doctrine@0.0.9':
     resolution: {integrity: sha512-eOIHzCUSH7SMfonMG1LsC2f8vxBFtho6NGBznK41R84YzPuvSBzrhEps33IsQiOW9+VL6NQ9DbjQJznk/S4uRA==}
 
@@ -2110,9 +2101,6 @@ packages:
   crypto-browserify@3.12.1:
     resolution: {integrity: sha512-r4ESw/IlusD17lgQi1O20Fa3qNnsckR126TdUuBgAu7GBYSIPvdNyONd3Zrxh0xCwA4+6w/TDArBPsMvhur+KQ==}
     engines: {node: '>= 0.10'}
-
-  crypto-js@4.2.0:
-    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
 
   crypto-random-string@4.0.0:
     resolution: {integrity: sha512-x8dy3RnvYdlUcPOjkEHqozhiwzKNSq7GcPuXFbnyMOCHxX8V3OgIg/pYuabl2sbUPfIJaeAQB7PMOK8DFIdoRA==}
@@ -5830,8 +5818,8 @@ snapshots:
       semver: 7.7.1
       simple-git: 3.27.0
       typedoc: 0.27.9(typescript@5.9.3)
-      typedoc-plugin-frontmatter: 1.2.1(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.7.3)))
-      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.7.3))
+      typedoc-plugin-frontmatter: 1.2.1(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.3)))
+      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.9.3))
       typescript-eslint: 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
       v8flags: 4.0.1
       vite-plugin-dts: 4.2.3(@types/node@22.13.9)(rollup@4.34.8)(typescript@5.9.3)(vite@6.2.0(@types/node@22.13.9)(jiti@2.4.2)(tsx@4.19.3)(yaml@2.7.0))
@@ -5902,8 +5890,6 @@ snapshots:
     dependencies:
       '@types/node': 22.13.9
 
-  '@types/crypto-js@4.2.2': {}
-
   '@types/doctrine@0.0.9': {}
 
   '@types/estree@1.0.6': {}
@@ -5957,10 +5943,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/eslint-plugin@8.25.0(@typescript-eslint/parser@8.25.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3))(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)':
+  '@typescript-eslint/eslint-plugin@8.25.0(@typescript-eslint/parser@8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3))(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.1
-      '@typescript-eslint/parser': 8.25.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3)
+      '@typescript-eslint/parser': 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
       '@typescript-eslint/scope-manager': 8.25.0
       '@typescript-eslint/type-utils': 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
       '@typescript-eslint/utils': 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
@@ -6782,8 +6768,6 @@ snapshots:
       public-encrypt: 4.0.3
       randombytes: 2.1.0
       randomfill: 1.0.4
-
-  crypto-js@4.2.0: {}
 
   crypto-random-string@4.0.0:
     dependencies:
@@ -9460,9 +9444,18 @@ snapshots:
       typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.7.3))
       yaml: 2.7.0
 
+  typedoc-plugin-frontmatter@1.2.1(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.3))):
+    dependencies:
+      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.9.3))
+      yaml: 2.7.0
+
   typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.7.3)):
     dependencies:
       typedoc: 0.27.9(typescript@5.7.3)
+
+  typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.3)):
+    dependencies:
+      typedoc: 0.27.9(typescript@5.9.3)
 
   typedoc@0.27.9(typescript@5.7.3):
     dependencies:
@@ -9494,7 +9487,7 @@ snapshots:
 
   typescript-eslint@8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.25.0(@typescript-eslint/parser@8.25.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3))(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
+      '@typescript-eslint/eslint-plugin': 8.25.0(@typescript-eslint/parser@8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3))(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
       '@typescript-eslint/parser': 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
       '@typescript-eslint/utils': 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
       eslint: 9.39.0(jiti@2.4.2)

@@ -54,6 +54,51 @@ const nfdData = await nfd.resolve('alice.algo')
 console.log(nfdData)
 ```
 
+## Lookup-only entry (`@txnlab/nfd-sdk/lookup`)
+
+If all you need is name/address resolution, import from the `@txnlab/nfd-sdk/lookup`
+subpath instead of the full client. It exposes an `NfdResolver` that reads NFD
+records directly from on-chain state and **does not bundle** the generated typed
+contract clients or the NFD HTTP API client, so it ships in a fraction of the
+bytes (roughly 13 KB vs. the full client's ~320 KB). Reach for it in
+size-sensitive contexts — wallets, browser extensions, edge functions — where you
+only need to resolve names and addresses and don't mint, purchase, or manage NFDs.
+
+```typescript
+import { NfdResolver } from '@txnlab/nfd-sdk/lookup'
+
+// MainNet by default; use NfdResolver.testNet() for TestNet
+const resolver = new NfdResolver()
+
+// Forward lookup: name (or app ID) → full NFD record
+const nfd = await resolver.resolve('alice.algo')
+
+// Reverse lookup: address → primary NFD (or null), read on-chain
+const primary = await resolver.resolveAddress(
+  'ZZAF5ARA4MEC5PVDOP64JM5O5MQST63Q2KOY2FLYFLXXD3PFSNJJBYAFZM',
+)
+
+// Bulk reverse lookup: address → primary NFD
+const records = await resolver.resolveAddresses([addr1, addr2])
+```
+
+You can pass your own `AlgorandClient` and/or a custom `registryId`:
+
+```typescript
+import { AlgorandClient } from '@algorandfoundation/algokit-utils'
+import { NfdResolver, NfdRegistryId } from '@txnlab/nfd-sdk/lookup'
+
+const resolver = new NfdResolver({
+  algorand: AlgorandClient.mainNet(),
+  registryId: NfdRegistryId.MAINNET,
+})
+```
+
+> **Note:** Reverse lookups use the registry's on-chain reverse index, which only
+> contains **verified** address links. The `allowUnverified` option (from the full
+> client's API-backed reverse lookup) therefore has no effect here. If you need
+> unverified matches or other API-only features, use the full `NfdClient`.
+
 ## Usage Examples
 
 ### Resolving an NFD

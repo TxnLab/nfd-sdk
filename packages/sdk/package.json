@@ -17,6 +17,16 @@
         "default": "./dist/cjs/index.cjs"
       }
     },
+    "./lookup": {
+      "import": {
+        "types": "./dist/types/lookup.d.ts",
+        "default": "./dist/esm/lookup.js"
+      },
+      "require": {
+        "types": "./dist/types/lookup.d.cts",
+        "default": "./dist/cjs/lookup.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -68,8 +78,7 @@
   },
   "dependencies": {
     "@algorandfoundation/algokit-utils": "^8.2.2",
-    "@hey-api/client-fetch": "^0.8.1",
-    "crypto-js": "^4.2.0"
+    "@hey-api/client-fetch": "^0.8.1"
   },
   "peerDependencies": {
     "algosdk": "^3.0.0"
@@ -78,7 +87,6 @@
     "@algorandfoundation/algokit-client-generator": "^4.0.8",
     "@hey-api/openapi-ts": "^0.64.5",
     "@tanstack/config": "^0.16.2",
-    "@types/crypto-js": "^4.2.2",
     "@types/node": "^22.13.9",
     "@types/node-fetch": "^2.6.12",
     "@vitest/coverage-v8": "^3.0.7",
