@@ -18,7 +18,7 @@ pnpm install
 pnpm --filter @txnlab/nfd-sdk-lookup-example start
 
 # Or resolve a different name
-pnpm --filter @txnlab/nfd-sdk-lookup-example start your-name.algo
+pnpm --filter @txnlab/nfd-sdk-lookup-example start alice.algo
 ```
 
 ## SDK Functions Demonstrated
