@@ -189,6 +189,22 @@ importers:
         specifier: ^0.23.0
         version: 0.23.0(rollup@4.34.8)(vite@4.5.9(@types/node@22.13.9))
 
+  examples/lookup:
+    dependencies:
+      '@txnlab/nfd-sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      algosdk:
+        specifier: ^3.5.2
+        version: 3.5.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.9
+        version: 22.13.9
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.3
+
   examples/mint:
     dependencies:
       '@algorandfoundation/algokit-utils':
