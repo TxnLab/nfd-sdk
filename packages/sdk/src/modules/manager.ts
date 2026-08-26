@@ -6,7 +6,9 @@ import { parseTransactionError } from '../utils/error-parser'
 import { strToUint8Array, concatUint8Arrays } from '../utils/internal/bytes'
 
 import { BaseModule } from './base'
+import { LookupModule } from './lookup'
 
+import type { AppBox } from './base'
 import type { NfdClient } from '../client'
 import type {
   Nfd,
@@ -20,6 +22,7 @@ import type {
  */
 export class NfdManager extends BaseModule {
   private _nfd: Nfd | null = null
+  private _boxes: AppBox[] | null = null
   private readonly _nameOrAppId: string | number | bigint
 
   constructor(client: NfdClient, nameOrAppId: string | number | bigint) {
@@ -34,9 +37,35 @@ export class NfdManager extends BaseModule {
    */
   private async getNfd(): Promise<Nfd> {
     if (!this._nfd) {
-      this._nfd = await this.client.resolve(this._nameOrAppId, { view: 'full' })
+      // Keep the boxes from the same read so operations that need a raw box
+      // value do not have to fetch it again
+      const { nfd, boxes } = await new LookupModule(
+        this.client,
+      ).resolveWithBoxes(this._nameOrAppId, { view: 'full' })
+      this._nfd = nfd
+      this._boxes = boxes
     }
     return this._nfd
+  }
+
+  /**
+   * Get the raw value of a box read during the last `getNfd()`
+   * @param name - The box name
+   * @returns The box value, or an empty array if the NFD has no such box
+   */
+  private getResolvedBoxValue(name: string): Uint8Array {
+    return (
+      this._boxes?.find((box) => box.name === name)?.value ?? new Uint8Array()
+    )
+  }
+
+  /**
+   * Drop the cached NFD so the next `getNfd()` re-reads it from chain. Clears
+   * the cached boxes too, so they can never pair with a newer NFD.
+   */
+  private invalidate(): void {
+    this._nfd = null
+    this._boxes = null
   }
 
   /**
@@ -112,13 +141,10 @@ export class NfdManager extends BaseModule {
       addressToLink.publicKey,
     ]
 
-    // Get current v.caAlgo.0.as box value/size
-    let curCaAlgo: Uint8Array
-    try {
-      curCaAlgo = await nfdInstanceClient.appClient.getBoxValue('v.caAlgo.0.as')
-    } catch {
-      curCaAlgo = new Uint8Array()
-    }
+    // Current v.caAlgo.0.as box value/size, already read by getNfd() above.
+    // The raw bytes are needed rather than nfd.caAlgo because empty (zero
+    // filled) address slots count toward the size the update is costed against.
+    const curCaAlgo = this.getResolvedBoxValue('v.caAlgo.0.as')
 
     // Calculate the eventual fields after the update
     const eventualFields: Uint8Array[] = [
@@ -193,7 +219,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -246,7 +272,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -345,7 +371,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -397,7 +423,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -444,7 +470,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -521,7 +547,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -569,7 +595,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -601,13 +627,11 @@ export class NfdManager extends BaseModule {
         })
         .send({ populateAppCallResources: true })
     } catch (error) {
-      throw new Error(
-        `Failed to cancel sale: ${parseTransactionError(error)}`,
-      )
+      throw new Error(`Failed to cancel sale: ${parseTransactionError(error)}`)
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -618,10 +642,7 @@ export class NfdManager extends BaseModule {
    * @returns The updated NFD
    * @throws If the operation fails
    */
-  public async lockSegment(
-    lock: boolean,
-    usdPrice: number = 0,
-  ): Promise<Nfd> {
+  public async lockSegment(lock: boolean, usdPrice: number = 0): Promise<Nfd> {
     const signer = this.requireSigner()
     const nfd = await this.getNfd()
 
@@ -653,7 +674,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -694,7 +715,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -742,13 +763,12 @@ export class NfdManager extends BaseModule {
         for (const assetId of assets) {
           if (assetId === 0) {
             // ALGO transfer
-            const paymentTxn =
-              await this.algorand.createTransaction.payment({
-                sender: signer.addr,
-                receiver: vaultAddress,
-                amount: AlgoAmount.MicroAlgos(options.amount ?? 0n),
-                note: options.note,
-              })
+            const paymentTxn = await this.algorand.createTransaction.payment({
+              sender: signer.addr,
+              receiver: vaultAddress,
+              amount: AlgoAmount.MicroAlgos(options.amount ?? 0n),
+              note: options.note,
+            })
             group.addTransaction(paymentTxn)
           } else {
             // ASA transfer
@@ -773,7 +793,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 
@@ -836,7 +856,7 @@ export class NfdManager extends BaseModule {
     }
 
     // Refresh the NFD data
-    this._nfd = null
+    this.invalidate()
     return this.getNfd()
   }
 }

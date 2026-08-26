@@ -3,7 +3,8 @@ import { describe, it, expect } from 'vitest'
 
 import { buildNfdRecord } from '../../src/utils/internal/nfd-record'
 
-import type { AppState, BoxName } from '@algorandfoundation/algokit-utils/types/app'
+import type { AppBox } from '../../src/utils/internal/boxes'
+import type { AppState } from '@algorandfoundation/algokit-utils/types/app'
 
 const APP_ID = 763844423n
 const APP_ADDRESS = getApplicationAddress(APP_ID).toString()
@@ -13,10 +14,17 @@ const ADDR_B = 'RSV2YCHXA7MWGFTX3WYI7TVGAS5W5XH5M7ZQVXPPRQ7DNTNW36OW2TRR6I'
 const utf8 = (s: string): Uint8Array => new TextEncoder().encode(s)
 
 function bytesEntry(valueRaw: Uint8Array, value = ''): AppState[string] {
-  return { value, valueRaw, valueBase64: '', keyRaw: new Uint8Array(), keyBase64: '' }
+  return {
+    value,
+    valueRaw,
+    valueBase64: '',
+    keyRaw: new Uint8Array(),
+    keyBase64: '',
+  }
 }
 const stringEntry = (s: string): AppState[string] => bytesEntry(utf8(s), s)
-const uintEntry = (n: number | bigint): AppState[string] => bytesEntry(encodeUint64(n))
+const uintEntry = (n: number | bigint): AppState[string] =>
+  bytesEntry(encodeUint64(n))
 const addressEntry = (a: string): AppState[string] =>
   bytesEntry(Address.fromString(a).publicKey)
 
@@ -52,29 +60,14 @@ function makeState(overrides: StateOverrides = {}): AppState {
   return state
 }
 
-const box = (name: string): BoxName => ({
-  name,
-  nameRaw: utf8(name),
-  nameBase64: '',
-})
-
-function boxReader(values: Record<string, Uint8Array>) {
-  return (nameRaw: Uint8Array): Promise<Uint8Array> =>
-    Promise.resolve(values[new TextDecoder().decode(nameRaw)] ?? new Uint8Array(0))
+/** Boxes arrive from algod with names and values together */
+function boxesFrom(values: Record<string, Uint8Array>): AppBox[] {
+  return Object.entries(values).map(([name, value]) => ({ name, value }))
 }
-
-const noBoxes = boxReader({})
 
 describe('buildNfdRecord', () => {
   describe('box parsing (full view)', () => {
     it('parses verified caAlgo, user-defined, unverified and split fields', async () => {
-      const boxes = [
-        box('v.caAlgo.0.as'),
-        box('u.url'),
-        box('u.caalgo'),
-        box('u.bio_00'),
-        box('u.bio_01'),
-      ]
       const values: Record<string, Uint8Array> = {
         // One real 32-byte public key + one zero key (which must be skipped)
         'v.caAlgo.0.as': new Uint8Array([
@@ -91,8 +84,7 @@ describe('buildNfdRecord', () => {
         appId: APP_ID,
         appAddress: APP_ADDRESS,
         globalState: makeState(),
-        boxes,
-        getBoxValue: boxReader(values),
+        boxes: boxesFrom(values),
         view: 'full',
       })
 
@@ -106,9 +98,62 @@ describe('buildNfdRecord', () => {
     })
   })
 
+  describe('split fields', () => {
+    it('reassembles chunks in index order regardless of arrival order', () => {
+      const nfd = buildNfdRecord({
+        appId: APP_ID,
+        appAddress: APP_ADDRESS,
+        globalState: makeState(),
+        boxes: [
+          { name: 'u.bio_01', value: utf8(' world') },
+          { name: 'u.bio_00', value: utf8('hello') },
+          { name: 'u.bio_02', value: utf8('!') },
+        ],
+        view: 'full',
+      })
+
+      expect(nfd.properties?.userDefined?.bio).toBe('hello world!')
+    })
+
+    it('skips gaps left by a missing chunk', () => {
+      const nfd = buildNfdRecord({
+        appId: APP_ID,
+        appAddress: APP_ADDRESS,
+        globalState: makeState(),
+        boxes: [
+          { name: 'u.bio_00', value: utf8('hello') },
+          // no _01
+          { name: 'u.bio_02', value: utf8('!') },
+        ],
+        view: 'full',
+      })
+
+      expect(nfd.properties?.userDefined?.bio).toBe('hello!')
+    })
+  })
+
+  describe('verified caAlgo parsing', () => {
+    it('skips zero-filled address slots', () => {
+      const value = new Uint8Array(96)
+      value.set(Address.fromString(OWNER).publicKey, 0)
+      // bytes 32-63 stay zero — an empty slot
+      value.set(Address.fromString(ADDR_B).publicKey, 64)
+
+      const nfd = buildNfdRecord({
+        appId: APP_ID,
+        appAddress: APP_ADDRESS,
+        globalState: makeState(),
+        boxes: [{ name: 'v.caAlgo.0.as', value }],
+        view: 'full',
+      })
+
+      expect(nfd.caAlgo).toEqual([OWNER, ADDR_B])
+      expect(nfd.properties?.verified?.caAlgo).toBe(`${OWNER},${ADDR_B}`)
+    })
+  })
+
   describe('view filtering', () => {
     it('tiny view includes caAlgo/url but excludes other user fields', async () => {
-      const boxes = [box('v.caAlgo.0.as'), box('u.url'), box('u.bio')]
       const values: Record<string, Uint8Array> = {
         'v.caAlgo.0.as': Address.fromString(OWNER).publicKey,
         'u.url': utf8('https://example.com'),
@@ -119,8 +164,7 @@ describe('buildNfdRecord', () => {
         appId: APP_ID,
         appAddress: APP_ADDRESS,
         globalState: makeState(),
-        boxes,
-        getBoxValue: boxReader(values),
+        boxes: boxesFrom(values),
         view: 'tiny',
       })
 
@@ -135,11 +179,7 @@ describe('buildNfdRecord', () => {
       ['owned', { owner: OWNER }, 'owned'],
       ['forSale', { owner: OWNER, sellamt: 1_000_000 }, 'forSale'],
       ['minting', { owner: OWNER, minting: '1' }, 'minting'],
-      [
-        'reserved',
-        { owner: APP_ADDRESS, reservedOwner: OWNER },
-        'reserved',
-      ],
+      ['reserved', { owner: APP_ADDRESS, reservedOwner: OWNER }, 'reserved'],
       ['available', { owner: APP_ADDRESS }, 'available'],
       ['expired', { owner: OWNER, expirationTime: 1_000_000 }, 'expired'],
     ]
@@ -150,7 +190,6 @@ describe('buildNfdRecord', () => {
         appAddress: APP_ADDRESS,
         globalState: makeState(overrides),
         boxes: [],
-        getBoxValue: noBoxes,
       })
       expect(nfd.state).toBe(expected)
     })
@@ -161,7 +200,6 @@ describe('buildNfdRecord', () => {
         appAddress: APP_ADDRESS,
         globalState: makeState({ owner: OWNER, expirationTime: 1_000_000 }),
         boxes: [],
-        getBoxValue: noBoxes,
       })
       expect(nfd.expired).toBe(true)
       expect(nfd.depositAccount).toBeUndefined()
@@ -175,7 +213,6 @@ describe('buildNfdRecord', () => {
         appAddress: APP_ADDRESS,
         globalState: makeState({ owner: OWNER }),
         boxes: [],
-        getBoxValue: noBoxes,
       })
       expect(nfd.name).toBe('example.algo')
       expect(nfd.appID).toBe(Number(APP_ID))

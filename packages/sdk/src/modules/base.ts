@@ -5,6 +5,7 @@ import { Address } from 'algosdk'
 import { DefaultSender, NfdRegistryId } from '../constants'
 import { NfdInstanceClient } from '../contracts/NFDInstanceClient'
 import { NfdRegistryClient } from '../contracts/NFDRegistryClient'
+import { getAllBoxes } from '../utils/internal/boxes'
 import {
   decodeAppIdFromNameBox,
   getNameBoxName,
@@ -12,6 +13,9 @@ import {
 
 import type { NfdClient } from '../client'
 import type { Constraints } from '../contracts/NFDRegistryClient'
+import type { AppBox } from '../utils/internal/boxes'
+
+export type { AppBox } from '../utils/internal/boxes'
 
 /**
  * Base module class that all other modules will extend
@@ -92,6 +96,23 @@ export abstract class BaseModule {
    */
   protected getRegistryBoxNameForNFD(nfdName: string): Promise<Uint8Array> {
     return getNameBoxName(nfdName)
+  }
+
+  /**
+   * Get every box for an application, with values included
+   *
+   * Uses the `include=values` query parameter so that names and values arrive
+   * together, which takes one request per page rather than one request per box.
+   * Pages after the first are pinned to the round the first page was read at, so
+   * a multi-page read is consistent.
+   *
+   * @param appId - The application ID to read boxes from
+   * @returns Every box for the application
+   * @throws If the node returns boxes without values, or does not advance the
+   * pagination cursor
+   */
+  protected getAllBoxes(appId: bigint): Promise<AppBox[]> {
+    return getAllBoxes(this.algorand.client.algod, appId)
   }
 
   /**

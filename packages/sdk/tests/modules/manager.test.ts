@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 import { NfdClient } from '../../src/client'
 import { ALGORAND_ZERO_ADDRESS } from '../../src/constants'
+import { LookupModule } from '../../src/modules/lookup'
 import { NfdManager } from '../../src/modules/manager'
 
 import type { Nfd } from '../../src/types'
@@ -30,7 +31,9 @@ interface MockSigner {
 
 interface MockInstanceClient {
   appAddress: string
+  appId: bigint
   newGroup: ReturnType<typeof vi.fn>
+  appClient: { getBoxValue: ReturnType<typeof vi.fn> }
 }
 
 // Mock send result factory
@@ -72,16 +75,41 @@ function createMockInstanceClient(): MockInstanceClient {
     vaultSend: vi.fn().mockReturnValue({
       send: mockSend(),
     }),
+    getFieldUpdateCost: vi.fn().mockReturnValue({
+      simulate: vi.fn().mockResolvedValue({ returns: [1000n] }),
+    }),
+    updateFields: vi.fn().mockReturnThis(),
     addTransaction: vi.fn().mockReturnThis(),
     send: mockSend(),
   }
   return {
     appAddress: 'mock-app-address',
+    appId: 12345n,
     newGroup: vi.fn().mockReturnValue(groupMock),
+    // Present so a stray per-box read would be visible rather than throwing
+    appClient: { getBoxValue: vi.fn() },
+  }
+}
+
+// Build a mock registry client for the address-linking flow
+function createMockRegistryClient() {
+  return {
+    appAddress: 'mock-registry-address',
+    newGroup: vi.fn().mockReturnValue({
+      costToAddToAddress: vi.fn().mockReturnValue({
+        simulate: vi.fn().mockResolvedValue({ returns: [0n] }),
+      }),
+    }),
+    createTransaction: {
+      linkNfdAddress: vi
+        .fn()
+        .mockResolvedValue({ transactions: [{ id: 'mock-link-txn' }] }),
+    },
   }
 }
 
 let mockInstanceClient: MockInstanceClient
+let mockRegistryClient: ReturnType<typeof createMockRegistryClient>
 
 // Mock the dependencies
 vi.mock('algosdk', () => ({
@@ -124,6 +152,7 @@ describe('NfdManager', () => {
     vi.clearAllMocks()
 
     mockInstanceClient = createMockInstanceClient()
+    mockRegistryClient = createMockRegistryClient()
 
     mockSigner = {
       addr: { toString: () => OWNER_ADDRESS },
@@ -134,8 +163,11 @@ describe('NfdManager', () => {
     client.setSigner(OWNER_ADDRESS, mockSigner.signer)
     manager = new NfdManager(client, 'test.algo')
 
-    // Mock client.resolve to return the owned NFD
-    vi.spyOn(client, 'resolve').mockResolvedValue(mockOwnedNfd)
+    // Mock the resolve the manager uses to return the owned NFD and its boxes
+    vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+      nfd: mockOwnedNfd,
+      boxes: [],
+    })
 
     // Mock getInstanceClient
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -150,15 +182,16 @@ describe('NfdManager', () => {
 
       expect(price).toBe(5000000n)
       expect(mockInstanceClient.newGroup).toHaveBeenCalled()
-      expect(
-        mockInstanceClient.newGroup().getRenewPrice,
-      ).toHaveBeenCalled()
+      expect(mockInstanceClient.newGroup().getRenewPrice).toHaveBeenCalled()
     })
 
     it('should throw if NFD has no appID', async () => {
-      vi.spyOn(client, 'resolve').mockResolvedValueOnce({
-        ...mockOwnedNfd,
-        appID: undefined,
+      vi.spyOn(
+        LookupModule.prototype,
+        'resolveWithBoxes',
+      ).mockResolvedValueOnce({
+        nfd: { ...mockOwnedNfd, appID: undefined },
+        boxes: [],
       })
       // Reset cached NFD
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -218,16 +251,17 @@ describe('NfdManager', () => {
     })
 
     it('should throw if NFD has no appID', async () => {
-      vi.spyOn(client, 'resolve').mockResolvedValueOnce({
-        ...mockOwnedNfd,
-        appID: undefined,
+      vi.spyOn(
+        LookupModule.prototype,
+        'resolveWithBoxes',
+      ).mockResolvedValueOnce({
+        nfd: { ...mockOwnedNfd, appID: undefined },
+        boxes: [],
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(manager as any)._nfd = null
 
-      await expect(manager.renew()).rejects.toThrow(
-        'NFD has no application ID',
-      )
+      await expect(manager.renew()).rejects.toThrow('NFD has no application ID')
     })
   })
 
@@ -235,9 +269,7 @@ describe('NfdManager', () => {
     it('should list the NFD for sale with default reservedFor', async () => {
       const result = await manager.listForSale(10000000n)
 
-      expect(
-        mockInstanceClient.newGroup().offerForSale,
-      ).toHaveBeenCalledWith({
+      expect(mockInstanceClient.newGroup().offerForSale).toHaveBeenCalledWith({
         args: {
           sellAmount: 10000000n,
           reservedFor: ALGORAND_ZERO_ADDRESS,
@@ -253,9 +285,7 @@ describe('NfdManager', () => {
     it('should use provided reservedFor address', async () => {
       await manager.listForSale(10000000n, { reservedFor: OTHER_ADDRESS })
 
-      expect(
-        mockInstanceClient.newGroup().offerForSale,
-      ).toHaveBeenCalledWith({
+      expect(mockInstanceClient.newGroup().offerForSale).toHaveBeenCalledWith({
         args: {
           sellAmount: 10000000n,
           reservedFor: OTHER_ADDRESS,
@@ -288,9 +318,7 @@ describe('NfdManager', () => {
     it('should cancel the sale listing', async () => {
       const result = await manager.cancelSale()
 
-      expect(
-        mockInstanceClient.newGroup().cancelSale,
-      ).toHaveBeenCalledWith({
+      expect(mockInstanceClient.newGroup().cancelSale).toHaveBeenCalledWith({
         args: {},
         staticFee: expect.objectContaining({
           amountInMicroAlgo: 3000n,
@@ -322,9 +350,7 @@ describe('NfdManager', () => {
     it('should lock segment minting', async () => {
       await manager.lockSegment(true, 300)
 
-      expect(
-        mockInstanceClient.newGroup().segmentLock,
-      ).toHaveBeenCalledWith({
+      expect(mockInstanceClient.newGroup().segmentLock).toHaveBeenCalledWith({
         args: {
           lock: true,
           usdPrice: 300n,
@@ -338,9 +364,7 @@ describe('NfdManager', () => {
     it('should unlock segment minting', async () => {
       await manager.lockSegment(false)
 
-      expect(
-        mockInstanceClient.newGroup().segmentLock,
-      ).toHaveBeenCalledWith({
+      expect(mockInstanceClient.newGroup().segmentLock).toHaveBeenCalledWith({
         args: {
           lock: false,
           usdPrice: 0n,
@@ -373,27 +397,27 @@ describe('NfdManager', () => {
     it('should lock vault opt-ins', async () => {
       await manager.lockVault(true)
 
-      expect(
-        mockInstanceClient.newGroup().vaultOptInLock,
-      ).toHaveBeenCalledWith({
-        args: { lock: true },
-        staticFee: expect.objectContaining({
-          amountInMicroAlgo: 3000n,
-        }),
-      })
+      expect(mockInstanceClient.newGroup().vaultOptInLock).toHaveBeenCalledWith(
+        {
+          args: { lock: true },
+          staticFee: expect.objectContaining({
+            amountInMicroAlgo: 3000n,
+          }),
+        },
+      )
     })
 
     it('should unlock vault opt-ins', async () => {
       await manager.lockVault(false)
 
-      expect(
-        mockInstanceClient.newGroup().vaultOptInLock,
-      ).toHaveBeenCalledWith({
-        args: { lock: false },
-        staticFee: expect.objectContaining({
-          amountInMicroAlgo: 3000n,
-        }),
-      })
+      expect(mockInstanceClient.newGroup().vaultOptInLock).toHaveBeenCalledWith(
+        {
+          args: { lock: false },
+          staticFee: expect.objectContaining({
+            amountInMicroAlgo: 3000n,
+          }),
+        },
+      )
     })
 
     it('should throw if not the owner', async () => {
@@ -450,21 +474,24 @@ describe('NfdManager', () => {
       await manager.sendToVault([42], { amount: 500n, note: 'test' })
 
       expect(mockInstanceClient.newGroup().vaultOptIn).toHaveBeenCalled()
-      expect(
-        mockAlgorand.createTransaction.assetTransfer,
-      ).toHaveBeenCalledWith({
-        sender: expect.anything(),
-        receiver: VAULT_ADDRESS,
-        assetId: 42n,
-        amount: 500n,
-        note: 'test',
-      })
+      expect(mockAlgorand.createTransaction.assetTransfer).toHaveBeenCalledWith(
+        {
+          sender: expect.anything(),
+          receiver: VAULT_ADDRESS,
+          assetId: 42n,
+          amount: 500n,
+          note: 'test',
+        },
+      )
     })
 
     it('should throw if NFD has no vault account', async () => {
-      vi.spyOn(client, 'resolve').mockResolvedValueOnce({
-        ...mockOwnedNfd,
-        nfdAccount: undefined,
+      vi.spyOn(
+        LookupModule.prototype,
+        'resolveWithBoxes',
+      ).mockResolvedValueOnce({
+        nfd: { ...mockOwnedNfd, nfdAccount: undefined },
+        boxes: [],
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(manager as any)._nfd = null
@@ -528,9 +555,9 @@ describe('NfdManager', () => {
     })
 
     it('should throw if no assets specified', async () => {
-      await expect(
-        manager.sendFromVault([], OTHER_ADDRESS),
-      ).rejects.toThrow('At least one asset must be specified')
+      await expect(manager.sendFromVault([], OTHER_ADDRESS)).rejects.toThrow(
+        'At least one asset must be specified',
+      )
     })
 
     it('should include note when provided', async () => {
@@ -545,6 +572,87 @@ describe('NfdManager', () => {
             note: 'payment',
           }),
         }),
+      )
+    })
+  })
+
+  describe('linkAddress', () => {
+    /** Seed the manager's cache with a v.caAlgo.0.as box of the given value */
+    function seedCaAlgoBox(value: Uint8Array) {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: mockOwnedNfd,
+        boxes: [{ name: 'v.caAlgo.0.as', value }],
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(manager as any)._nfd = null
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.spyOn(manager as any, 'getRegistryClient').mockReturnValue(
+        mockRegistryClient,
+      )
+    }
+
+    /** The eventual field values passed to the update-cost simulate */
+    function eventualFields(): Uint8Array[] {
+      return mockInstanceClient.newGroup().getFieldUpdateCost.mock.calls[0][0]
+        .args.fieldAndVals
+    }
+
+    it('sizes the update from the already-resolved caAlgo box', async () => {
+      // One populated 32-byte slot followed by an empty (zero filled) one
+      const curCaAlgo = new Uint8Array(64)
+      curCaAlgo.fill(7, 0, 32)
+      seedCaAlgoBox(curCaAlgo)
+
+      await manager.linkAddress(OTHER_ADDRESS)
+
+      // The box came from the resolve, so it is not read a second time
+      expect(mockInstanceClient.appClient.getBoxValue).not.toHaveBeenCalled()
+
+      // Existing 64 bytes plus the newly linked 32-byte public key
+      expect(eventualFields()[3]).toHaveLength(96)
+    })
+
+    it('keeps empty address slots, which count toward the update cost', async () => {
+      const curCaAlgo = new Uint8Array(64)
+      curCaAlgo.fill(7, 0, 32)
+      seedCaAlgoBox(curCaAlgo)
+
+      await manager.linkAddress(OTHER_ADDRESS)
+
+      // Bytes 32-63 are the zero filled slot and must survive intact
+      const combined = eventualFields()[3]
+      expect(Array.from(combined.slice(32, 64))).toEqual(Array(32).fill(0))
+      expect(Array.from(combined.slice(0, 32))).toEqual(Array(32).fill(7))
+    })
+
+    it('handles an NFD with no caAlgo box', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: mockOwnedNfd,
+        boxes: [],
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(manager as any)._nfd = null
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.spyOn(manager as any, 'getRegistryClient').mockReturnValue(
+        mockRegistryClient,
+      )
+
+      await manager.linkAddress(OTHER_ADDRESS)
+
+      // Just the newly linked public key
+      expect(eventualFields()[3]).toHaveLength(32)
+    })
+
+    it('rejects a caller that is not the owner', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: { ...mockOwnedNfd, owner: OTHER_ADDRESS },
+        boxes: [],
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(manager as any)._nfd = null
+
+      await expect(manager.linkAddress(OTHER_ADDRESS)).rejects.toThrow(
+        'Only the owner can link addresses to this NFD',
       )
     })
   })

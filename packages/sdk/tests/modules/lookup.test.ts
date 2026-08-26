@@ -59,10 +59,25 @@ function makeInstanceFake() {
     appAddress: getApplicationAddress(NFD_APP_ID),
     appClient: {
       getGlobalState: vi.fn().mockResolvedValue(makeGlobalState()),
-      getBoxNames: vi.fn().mockResolvedValue([]),
-      getBoxValue: vi.fn(),
     },
   }
+}
+
+/**
+ * Fake algod. Boxes are read in one `include=values` request, so the fake
+ * returns names and values together.
+ */
+function makeAlgodFake(boxes: Array<{ name: Uint8Array; value: Uint8Array }>) {
+  const getApplicationBoxes = vi.fn(() => {
+    const request = {
+      include: vi.fn(() => request),
+      next: vi.fn(() => request),
+      round: vi.fn(() => request),
+      do: vi.fn().mockResolvedValue({ boxes, round: 1000 }),
+    }
+    return request
+  })
+  return { getApplicationBoxes }
 }
 
 /** Fake shaped like the typed NfdRegistryClient used by getRegistryClient */
@@ -78,12 +93,16 @@ interface MockSetup {
   lookup: LookupModule
   registryFake: ReturnType<typeof makeRegistryFake>
   instanceFake: ReturnType<typeof makeInstanceFake>
+  algodFake: ReturnType<typeof makeAlgodFake>
   getTypedAppClientById: ReturnType<typeof vi.fn>
 }
 
-function setup(): MockSetup {
+function setup(
+  boxes: Array<{ name: Uint8Array; value: Uint8Array }> = [],
+): MockSetup {
   const registryFake = makeRegistryFake()
   const instanceFake = makeInstanceFake()
+  const algodFake = makeAlgodFake(boxes)
 
   // Dispatch by the typed-client class arg
   const getTypedAppClientById = vi.fn((ClientClass: unknown) => {
@@ -93,13 +112,19 @@ function setup(): MockSetup {
   })
 
   const mockClient = {
-    algorand: { client: { getTypedAppClientById } },
+    algorand: { client: { getTypedAppClientById, algod: algodFake } },
     registryId: BigInt(NfdRegistryId.MAINNET),
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lookup = new LookupModule(mockClient as any)
-  return { lookup, registryFake, instanceFake, getTypedAppClientById }
+  return {
+    lookup,
+    registryFake,
+    instanceFake,
+    algodFake,
+    getTypedAppClientById,
+  }
 }
 
 /** Registry name box: ASA ID (bytes 0-7) + app ID (bytes 8-15) */
@@ -115,7 +140,7 @@ describe('LookupModule', () => {
 
   describe('resolve by name', () => {
     it('resolves a name to its app ID via the registry then builds the record', async () => {
-      const { lookup, registryFake, instanceFake } = setup()
+      const { lookup, registryFake, instanceFake, algodFake } = setup()
       registryFake.appClient.getBoxValue.mockResolvedValue(nameBox)
 
       const nfd = await lookup.resolve(NFD_NAME)
@@ -128,9 +153,11 @@ describe('LookupModule', () => {
       expect(nfd.asaID).toBe(Number(ASA_ID))
       expect(nfd.owner).toBe(OWNER)
       expect(nfd.nfdAccount).toBe(APP_ADDRESS)
-      // Instance state/boxes were read for the resolved app ID
+      // Instance state/boxes were read for the resolved app ID, the boxes in
+      // a single request
       expect(instanceFake.appClient.getGlobalState).toHaveBeenCalledTimes(1)
-      expect(instanceFake.appClient.getBoxNames).toHaveBeenCalledTimes(1)
+      expect(algodFake.getApplicationBoxes).toHaveBeenCalledTimes(1)
+      expect(algodFake.getApplicationBoxes).toHaveBeenCalledWith(NFD_APP_ID)
     })
   })
 

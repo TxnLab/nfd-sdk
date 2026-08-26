@@ -2,6 +2,7 @@ import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { Address, decodeUint64 } from 'algosdk'
 
 import { DefaultSender, NfdRegistryId } from './constants'
+import { getAllBoxes } from './utils/internal/boxes'
 import { isZeroBytes } from './utils/internal/bytes'
 import { buildNfdRecord, type NfdView } from './utils/internal/nfd-record'
 import {
@@ -163,15 +164,18 @@ export class NfdResolver {
     const nfdAppId = await this.parseAppId(nameOrAppId)
     const instance = this.appClientFor(nfdAppId)
 
-    const globalState = await instance.getGlobalState()
-    const boxes = await instance.getBoxNames()
+    // Names and values arrive together, so this is one request per page rather
+    // than one per box
+    const [globalState, boxes] = await Promise.all([
+      instance.getGlobalState(),
+      getAllBoxes(this.algorand.client.algod, nfdAppId),
+    ])
 
     return buildNfdRecord({
       appId: nfdAppId,
       appAddress: instance.appAddress.toString(),
       globalState,
       boxes,
-      getBoxValue: (nameRaw) => instance.getBoxValue(nameRaw),
       view: options.view,
     })
   }

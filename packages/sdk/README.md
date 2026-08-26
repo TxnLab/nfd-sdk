@@ -4,7 +4,7 @@ SDK for interacting with NFDomains (NFD) API and Algorand blockchain. This packa
 
 ## Installation
 
-The SDK requires `algosdk` as a peer dependency. Install both packages:
+The SDK requires **`algosdk` v3.6.0 or later** as a peer dependency. Install both packages:
 
 ```bash
 # npm
@@ -16,6 +16,11 @@ yarn add @txnlab/nfd-sdk algosdk
 # pnpm
 pnpm add @txnlab/nfd-sdk algosdk
 ```
+
+> [!IMPORTANT]
+> v3.6.0 is the minimum because the SDK reads an NFD's properties with the `include=values` box query parameter, added in algosdk v3.6.0. It reads every box in one request instead of one request per box.
+>
+> On an older algosdk this fails at runtime, not at install time. It also needs an algod node new enough to honour `include=values` — the public MainNet and TestNet nodes already do.
 
 ## Quick Start
 

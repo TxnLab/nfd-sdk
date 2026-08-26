@@ -10,7 +10,7 @@ NFDomains SDK (`@txnlab/nfd-sdk`) — a TypeScript SDK for interacting with Non-
 
 - **`packages/sdk/`** — the SDK package (published as `@txnlab/nfd-sdk`)
 - **`examples/`** — React/Vite example apps demonstrating SDK features
-- Package manager: **pnpm v9+** with workspaces
+- Package manager: **pnpm v10+** with workspaces (pinned by the root `packageManager` field, which CI reads too)
 - Node version: **22.14.0** (see `.nvmrc`)
 
 ## Commands
@@ -30,6 +30,7 @@ pnpm build:examples       # Build all example apps
 ```
 
 Run a single test file:
+
 ```bash
 pnpm --filter @txnlab/nfd-sdk exec vitest run tests/utils/nfd.test.ts
 ```
@@ -64,6 +65,19 @@ All modules extend `BaseModule` (`modules/base.ts`), which provides access to th
 - **Fluent signer API**: `nfd.setSigner(addr, signer)` returns the client for chaining. The signer auto-resets after operations.
 - **Network presets**: `NfdClient.mainNet()` / `NfdClient.testNet()` with correct registry app IDs and API URLs.
 - **Dual output**: Build produces both ESM and CJS bundles. Contract clients are split into a separate `nfd-contracts` chunk.
+
+### Reading boxes
+
+An NFD's `userDefined` and `verified` properties live in application boxes, not global state. `getAllBoxes()` (`src/utils/internal/boxes.ts`) reads them **through the raw algod client** (`algorand.client.algod`) using `.include('values')`, so names and values arrive together — one request per page instead of one per box. Both readers share it: `LookupModule` via the `BaseModule.getAllBoxes()` wrapper, and the slim `NfdResolver` (`src/lookup-entry.ts`) directly. `buildNfdRecord()` then takes the boxes already carrying their values, which is why it is synchronous.
+
+**Do not "simplify" this to `appClient.getBoxNames()` / `getBoxValues()`, and do not reintroduce a `getBoxValue` callback into `buildNfdRecord()`.** algokit-utils has no bulk box API at any version (checked through 9.2.0): its `AppManager.getBoxValues()` is `Promise.all(boxNames.map(getBoxValue))`, i.e. still one HTTP request per box. Going back to it silently restores an N+1 — a property-rich NFD costs 15 round-trips instead of 1.
+
+Consequences to keep in mind:
+
+- **algosdk >= 3.6.0 is required** — `.include()` does not exist before it. This is why `peerDependencies.algosdk` is `^3.6.0`; loosening it breaks consumers at runtime, not at install.
+- `getAllBoxes()` follows `nextToken` and pins later pages to the first page's `round`. It throws if the cursor repeats (a node that never advances would loop forever) or if a box comes back without a value (a node ignoring `include=values`, which would otherwise yield an NFD silently missing all properties).
+- `resolve()`'s `view` option selects which boxes are **parsed**, not which are fetched — all of them arrive in the one request regardless.
+- Callers needing a raw box value should use `LookupModule.resolveWithBoxes()` and take it from the returned boxes rather than issuing a second read; `NfdManager` does this for `v.caAlgo.0.as`.
 
 ### API Client
 
