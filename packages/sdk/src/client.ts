@@ -402,6 +402,7 @@ export class NfdClient {
       return this._metadata.getBannerImage(input)
     }
   }
+
   /**
    * Get name suggestions for NFD registration
    * @param name - The name (even partial) to search for

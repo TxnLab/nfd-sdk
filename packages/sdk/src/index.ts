@@ -25,6 +25,7 @@ export type {
 export { NfdApiClient } from './api-client'
 
 // Export modules
+export { LookupModule } from './modules/lookup'
 export { NfdManager } from './modules/manager'
 export { PurchasingModule } from './modules/purchasing'
 
@@ -35,7 +36,9 @@ export type {
   NfdMintParams,
 } from './modules/minting'
 
+export type { ResolveResult } from './modules/lookup'
 export type { NfdPurchaseQuote } from './modules/purchasing'
+export type { AppBox } from './utils/internal/boxes'
 
 // Export NFD utility functions
 export {

@@ -1,8 +1,10 @@
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
 import { Address } from 'algosdk'
 
+import { APP_CALL_STATIC_FEE } from '../constants'
 import { Nfd } from '../types'
 import { parseTransactionError } from '../utils/error-parser'
+import { toAmount } from '../utils/internal/numbers'
 
 import { BaseModule } from './base'
 
@@ -307,32 +309,28 @@ export class PurchasingModule extends BaseModule {
     note: string = '',
   ): Promise<Nfd> {
     const signer = this.requireSigner()
+    const offer = toAmount(amount, 'Offer amount')
 
-    const nfd = await this.client.resolve(nameOrAppId, { view: 'full' })
-    if (!nfd.appID) {
-      throw new Error(`Cannot determine app ID for NFD: ${nfd.name}`)
-    }
-
-    const nfdInstanceClient = this.getInstanceClient(
-      BigInt(nfd.appID),
-      signer.addr,
-    )
+    // Only the app ID is needed to post the offer, so this takes a single
+    // registry box read rather than a full resolve
+    const nfdAppId = await this.parseAppId(nameOrAppId)
+    const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
 
     try {
       await nfdInstanceClient
         .newGroup()
         .postOffer({
           args: {
-            offer: BigInt(amount),
+            offer,
             note,
           },
-          staticFee: AlgoAmount.MicroAlgos(3000),
+          staticFee: AlgoAmount.MicroAlgos(APP_CALL_STATIC_FEE),
         })
         .send({ populateAppCallResources: true })
     } catch (error) {
       throw new Error(`Failed to make offer: ${parseTransactionError(error)}`)
     }
 
-    return this.client.resolve(nameOrAppId, { view: 'full' })
+    return this.client.resolve(nfdAppId, { view: 'full' })
   }
 }

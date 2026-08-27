@@ -23,6 +23,23 @@ const mockOwnedNfd: Nfd = {
   nfdAccount: VAULT_ADDRESS,
 }
 
+const mockForSaleNfd: Nfd = {
+  ...mockOwnedNfd,
+  state: 'forSale',
+  sellAmount: 10000000,
+}
+
+// What the registry reports, mirroring the shape of the Constraints struct
+const mockConstraints = {
+  segmentPlatformCostInUsd: 200n,
+  segmentPlatformCostInAlgo: 1000000n,
+  maxYearsAllowed: 20n,
+  treasuryAddress: OTHER_ADDRESS,
+  expiredAuctionDuration: 86400n,
+  expiredStartingPrice: 10000000n,
+  maxMintCarryCost: 0n,
+}
+
 // Mock types
 interface MockSigner {
   addr: { toString: () => string }
@@ -174,6 +191,12 @@ describe('NfdManager', () => {
     vi.spyOn(manager as any, 'getInstanceClient').mockReturnValue(
       mockInstanceClient,
     )
+
+    // Registry constraints bound the renewal term and the segment price
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.spyOn(manager as any, 'getConstraints').mockResolvedValue(
+      mockConstraints,
+    )
   })
 
   describe('getRenewalPrice', () => {
@@ -263,6 +286,37 @@ describe('NfdManager', () => {
 
       await expect(manager.renew()).rejects.toThrow('NFD has no application ID')
     })
+
+    it.each([0, 1.5, -1])(
+      'should reject %s years before paying anything',
+      async (years) => {
+        await expect(manager.renew(years)).rejects.toThrow(
+          'Renewal years must be a whole number of at least 1',
+        )
+
+        expect(mockAlgorand.createTransaction.payment).not.toHaveBeenCalled()
+      },
+    )
+
+    it('should reject more years than the registry allows', async () => {
+      await expect(manager.renew(21)).rejects.toThrow(
+        'Renewal years must be at most 20',
+      )
+
+      expect(mockAlgorand.createTransaction.payment).not.toHaveBeenCalled()
+    })
+
+    it('should take the maximum from the registry, not a fixed 20', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.spyOn(manager as any, 'getConstraints').mockResolvedValue({
+        ...mockConstraints,
+        maxYearsAllowed: 5n,
+      })
+
+      await expect(manager.renew(6)).rejects.toThrow(
+        'Renewal years must be at most 5',
+      )
+    })
   })
 
   describe('listForSale', () => {
@@ -312,10 +366,73 @@ describe('NfdManager', () => {
         'Only the owner can list this NFD for sale',
       )
     })
+
+    it('should refuse to list an NFD that still has properties', async () => {
+      // offerForSale asserts the NFD has no boxes left
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: mockOwnedNfd,
+        boxes: [{ name: 'u.url', value: new Uint8Array([1]) }],
+      })
+
+      await expect(manager.listForSale(10000000n)).rejects.toThrow(
+        'An NFD can only be sold once its properties are cleared, but 1 remain',
+      )
+
+      expect(mockInstanceClient.newGroup().offerForSale).not.toHaveBeenCalled()
+    })
+
+    it('should refuse to list an expired NFD', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: { ...mockOwnedNfd, expired: true },
+        boxes: [],
+      })
+
+      await expect(manager.listForSale(10000000n)).rejects.toThrow(
+        'Cannot list an expired NFD for sale',
+      )
+    })
+
+    it('should refuse to list an NFD that is still minting', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: { ...mockOwnedNfd, state: 'minting' },
+        boxes: [],
+      })
+
+      await expect(manager.listForSale(10000000n)).rejects.toThrow(
+        'Cannot list this NFD for sale while the NFD is still minting',
+      )
+    })
+  })
+
+  describe('price validation', () => {
+    it('should reject a fractional sale price', async () => {
+      await expect(manager.listForSale(1.5)).rejects.toThrow(
+        'Sale price must be a whole number, got 1.5',
+      )
+
+      expect(mockInstanceClient.newGroup().offerForSale).not.toHaveBeenCalled()
+    })
+
+    it('should reject a negative sale price', async () => {
+      await expect(manager.listForSale(-1)).rejects.toThrow(
+        'Sale price must not be negative, got -1',
+      )
+    })
+
+    it('should reject a fractional segment price', async () => {
+      await expect(manager.lockSegment(false, 3.5)).rejects.toThrow(
+        'Segment price must be a whole number, got 3.5',
+      )
+    })
   })
 
   describe('cancelSale', () => {
     it('should cancel the sale listing', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: mockForSaleNfd,
+        boxes: [],
+      })
+
       const result = await manager.cancelSale()
 
       expect(mockInstanceClient.newGroup().cancelSale).toHaveBeenCalledWith({
@@ -325,7 +442,37 @@ describe('NfdManager', () => {
         }),
       })
 
-      expect(result).toEqual(mockOwnedNfd)
+      expect(result).toEqual(mockForSaleNfd)
+    })
+
+    it('should throw if the NFD is not listed for sale', async () => {
+      await expect(manager.cancelSale()).rejects.toThrow(
+        'NFD is not listed for sale',
+      )
+
+      expect(mockInstanceClient.newGroup().cancelSale).not.toHaveBeenCalled()
+    })
+
+    it('should throw if the listed NFD has expired', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: { ...mockForSaleNfd, expired: true },
+        boxes: [],
+      })
+
+      await expect(manager.cancelSale()).rejects.toThrow(
+        'Cannot cancel the sale of an expired NFD',
+      )
+    })
+
+    it('should throw if the NFD is still minting', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: { ...mockForSaleNfd, state: 'minting' },
+        boxes: [],
+      })
+
+      await expect(manager.cancelSale()).rejects.toThrow(
+        'Cannot cancel the sale of this NFD while the NFD is still minting',
+      )
     })
 
     it('should throw if not the owner', async () => {
@@ -362,17 +509,45 @@ describe('NfdManager', () => {
     })
 
     it('should unlock segment minting', async () => {
-      await manager.lockSegment(false)
+      await manager.lockSegment(false, 300)
 
       expect(mockInstanceClient.newGroup().segmentLock).toHaveBeenCalledWith({
         args: {
           lock: false,
-          usdPrice: 0n,
+          usdPrice: 300n,
         },
         staticFee: expect.objectContaining({
           amountInMicroAlgo: 3000n,
         }),
       })
+    })
+
+    it('should reject an unlock price below the registry minimum', async () => {
+      // The default price of 0 is only valid when locking
+      await expect(manager.lockSegment(false)).rejects.toThrow(
+        'Segment price must be at least 200 USD cents when unlocking segment minting, got 0',
+      )
+
+      expect(mockInstanceClient.newGroup().segmentLock).not.toHaveBeenCalled()
+    })
+
+    it('should not require a price when locking', async () => {
+      await manager.lockSegment(true)
+
+      expect(mockInstanceClient.newGroup().segmentLock).toHaveBeenCalledWith(
+        expect.objectContaining({ args: { lock: true, usdPrice: 0n } }),
+      )
+    })
+
+    it('should throw if the NFD is listed for sale', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: mockForSaleNfd,
+        boxes: [],
+      })
+
+      await expect(manager.lockSegment(true)).rejects.toThrow(
+        'Cannot lock/unlock segments for this NFD while the NFD is listed for sale',
+      )
     })
 
     it('should throw if not the owner', async () => {
@@ -436,6 +611,21 @@ describe('NfdManager', () => {
         'Only the owner can lock/unlock the vault for this NFD',
       )
     })
+
+    it('should throw if the NFD is listed for sale', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: mockForSaleNfd,
+        boxes: [],
+      })
+
+      await expect(manager.lockVault(true)).rejects.toThrow(
+        'Cannot lock/unlock the vault for this NFD while the NFD is listed for sale',
+      )
+
+      expect(
+        mockInstanceClient.newGroup().vaultOptInLock,
+      ).not.toHaveBeenCalled()
+    })
   })
 
   describe('sendToVault', () => {
@@ -449,17 +639,39 @@ describe('NfdManager', () => {
         }),
       })
 
-      // Should not create transfer transactions
-      expect(mockAlgorand.createTransaction.payment).not.toHaveBeenCalled()
+      // The MBR payment is the only payment: 0.1 ALGO per asset, no transfer
+      expect(mockAlgorand.createTransaction.payment).toHaveBeenCalledTimes(1)
+      expect(mockAlgorand.createTransaction.payment).toHaveBeenCalledWith({
+        sender: expect.anything(),
+        receiver: VAULT_ADDRESS,
+        amount: expect.objectContaining({ amountInMicroAlgo: 200000n }),
+      })
       expect(
         mockAlgorand.createTransaction.assetTransfer,
       ).not.toHaveBeenCalled()
     })
 
-    it('should opt in and transfer ALGO (asset 0)', async () => {
+    it('should place the MBR payment directly before the opt-in', async () => {
+      // vaultOptIn asserts it is not first in the group and that the
+      // transaction immediately before it pays the vault's MBR
+      const group = mockInstanceClient.newGroup()
+      await manager.sendToVault([42], { amount: 500n })
+
+      const [mbrCall, transferCall] =
+        group.addTransaction.mock.invocationCallOrder
+      const [optInCall] = group.vaultOptIn.mock.invocationCallOrder
+
+      expect(mbrCall).toBeLessThan(optInCall)
+      expect(optInCall).toBeLessThan(transferCall)
+    })
+
+    it('should transfer ALGO (asset 0) without a vault opt-in', async () => {
       await manager.sendToVault([0], { amount: 1000000n })
 
-      expect(mockInstanceClient.newGroup().vaultOptIn).toHaveBeenCalled()
+      // ALGO needs no opt-in, so the contract is never asked to make one and
+      // no MBR is owed — the only payment is the transfer itself
+      expect(mockInstanceClient.newGroup().vaultOptIn).not.toHaveBeenCalled()
+      expect(mockAlgorand.createTransaction.payment).toHaveBeenCalledTimes(1)
       expect(mockAlgorand.createTransaction.payment).toHaveBeenCalledWith({
         sender: expect.anything(),
         receiver: VAULT_ADDRESS,
@@ -468,6 +680,52 @@ describe('NfdManager', () => {
         }),
         note: undefined,
       })
+    })
+
+    it('should exclude ALGO from the opt-in list, its fee and its MBR', async () => {
+      await manager.sendToVault([0, 42], { optInOnly: true })
+
+      expect(mockInstanceClient.newGroup().vaultOptIn).toHaveBeenCalledWith({
+        args: { assets: [42n] },
+        staticFee: expect.objectContaining({
+          amountInMicroAlgo: 4000n, // 3000 + 1000 * 1, not 1000 * 2
+        }),
+      })
+
+      expect(mockAlgorand.createTransaction.payment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: expect.objectContaining({ amountInMicroAlgo: 100000n }),
+        }),
+      )
+    })
+
+    it('should reject an amount sent with more than one asset', async () => {
+      await expect(
+        manager.sendToVault([100, 200], { amount: 500n }),
+      ).rejects.toThrow('An amount can only be sent with a single asset')
+
+      expect(mockInstanceClient.newGroup().vaultOptIn).not.toHaveBeenCalled()
+    })
+
+    it('should not emit a zero-amount transfer when no amount is given', async () => {
+      await manager.sendToVault([42])
+
+      expect(mockInstanceClient.newGroup().vaultOptIn).toHaveBeenCalled()
+      expect(
+        mockAlgorand.createTransaction.assetTransfer,
+      ).not.toHaveBeenCalled()
+    })
+
+    it('should throw if no assets are specified', async () => {
+      await expect(manager.sendToVault([])).rejects.toThrow(
+        'At least one asset must be specified',
+      )
+    })
+
+    it('should throw when ALGO is given with nothing to send', async () => {
+      await expect(manager.sendToVault([0])).rejects.toThrow(
+        'ALGO (asset 0) needs no opt-in, so sending it requires an amount',
+      )
     })
 
     it('should opt in and transfer ASA', async () => {
@@ -483,6 +741,33 @@ describe('NfdManager', () => {
           note: 'test',
         },
       )
+    })
+
+    it('should throw if the NFD is listed for sale', async () => {
+      // vaultOptIn is gated on notForSaleOrExpired()
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: mockForSaleNfd,
+        boxes: [],
+      })
+
+      await expect(
+        manager.sendToVault([42], { optInOnly: true }),
+      ).rejects.toThrow(
+        'Cannot send to the vault while the NFD is listed for sale',
+      )
+
+      expect(mockAlgorand.createTransaction.payment).not.toHaveBeenCalled()
+    })
+
+    it('should throw if the NFD has expired', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: { ...mockOwnedNfd, expired: true },
+        boxes: [],
+      })
+
+      await expect(
+        manager.sendToVault([42], { optInOnly: true }),
+      ).rejects.toThrow('Cannot send to the vault because the NFD has expired')
     })
 
     it('should throw if NFD has no vault account', async () => {
@@ -560,6 +845,78 @@ describe('NfdManager', () => {
       )
     })
 
+    it('should reject an amount sent with more than one asset', async () => {
+      // vaultSend asserts otherAssets is empty whenever amount is non-zero
+      await expect(
+        manager.sendFromVault([100, 200], OTHER_ADDRESS, { amount: 500n }),
+      ).rejects.toThrow('An amount can only be sent with a single asset')
+
+      expect(mockInstanceClient.newGroup().vaultSend).not.toHaveBeenCalled()
+    })
+
+    it('should reject ALGO alongside other assets', async () => {
+      await expect(
+        manager.sendFromVault([0, 100], OTHER_ADDRESS),
+      ).rejects.toThrow('ALGO (asset 0) must be sent from the vault on its own')
+    })
+
+    it('should reject ALGO without an amount', async () => {
+      // The contract has no close-out path for ALGO, so it asserts amount > 0
+      await expect(manager.sendFromVault([0], OTHER_ADDRESS)).rejects.toThrow(
+        'Sending ALGO (asset 0) from the vault requires an amount',
+      )
+    })
+
+    it("should reject sending the NFD's own ASA to anyone but the owner", async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: { ...mockOwnedNfd, asaID: 777 },
+        boxes: [],
+      })
+
+      await expect(manager.sendFromVault([777], OTHER_ADDRESS)).rejects.toThrow(
+        "The NFD's own ASA (777) can only be sent",
+      )
+
+      expect(mockInstanceClient.newGroup().vaultSend).not.toHaveBeenCalled()
+    })
+
+    it("should allow the NFD's own ASA to go to the owner", async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: { ...mockOwnedNfd, asaID: 777 },
+        boxes: [],
+      })
+
+      await manager.sendFromVault([777], OWNER_ADDRESS)
+
+      expect(mockInstanceClient.newGroup().vaultSend).toHaveBeenCalled()
+    })
+
+    it('should throw if the NFD is listed for sale', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: mockForSaleNfd,
+        boxes: [],
+      })
+
+      await expect(
+        manager.sendFromVault([100], OTHER_ADDRESS, { amount: 1n }),
+      ).rejects.toThrow(
+        'Cannot send from the vault while the NFD is listed for sale',
+      )
+    })
+
+    it('should throw if the NFD has expired', async () => {
+      vi.spyOn(LookupModule.prototype, 'resolveWithBoxes').mockResolvedValue({
+        nfd: { ...mockOwnedNfd, expired: true },
+        boxes: [],
+      })
+
+      await expect(
+        manager.sendFromVault([100], OTHER_ADDRESS, { amount: 1n }),
+      ).rejects.toThrow(
+        'Cannot send from the vault because the NFD has expired',
+      )
+    })
+
     it('should include note when provided', async () => {
       await manager.sendFromVault([100], OTHER_ADDRESS, {
         amount: 100n,
@@ -573,6 +930,93 @@ describe('NfdManager', () => {
           }),
         }),
       )
+    })
+
+    describe('receiver resolution', () => {
+      // vaultSend's receiver argument is an ABI address, so a name has to be
+      // resolved to one before the call
+      const receiverNfd: Nfd = {
+        name: 'receiver.algo',
+        appID: 999,
+        state: 'owned',
+        owner: OTHER_ADDRESS,
+        depositAccount: OTHER_ADDRESS,
+        nfdAccount: VAULT_ADDRESS,
+      }
+
+      it('passes a plain address straight through without resolving', async () => {
+        const resolve = vi.spyOn(client, 'resolve')
+
+        await manager.sendFromVault([100], OTHER_ADDRESS)
+
+        expect(resolve).not.toHaveBeenCalled()
+        expect(mockInstanceClient.newGroup().vaultSend).toHaveBeenCalledWith(
+          expect.objectContaining({
+            args: expect.objectContaining({ receiver: OTHER_ADDRESS }),
+          }),
+        )
+      })
+
+      it('resolves an NFD name to its deposit account by default', async () => {
+        vi.spyOn(client, 'resolve').mockResolvedValue(receiverNfd)
+
+        await manager.sendFromVault([100], 'receiver.algo')
+
+        expect(mockInstanceClient.newGroup().vaultSend).toHaveBeenCalledWith(
+          expect.objectContaining({
+            args: expect.objectContaining({ receiver: OTHER_ADDRESS }),
+          }),
+        )
+      })
+
+      it("resolves an NFD name to its vault for receiverType 'nfdVault'", async () => {
+        vi.spyOn(client, 'resolve').mockResolvedValue(receiverNfd)
+
+        await manager.sendFromVault([100], 'receiver.algo', {
+          receiverType: 'nfdVault',
+        })
+
+        expect(mockInstanceClient.newGroup().vaultSend).toHaveBeenCalledWith(
+          expect.objectContaining({
+            args: expect.objectContaining({ receiver: VAULT_ADDRESS }),
+          }),
+        )
+      })
+
+      it('rejects a receiver that is neither an address nor an NFD name', async () => {
+        await expect(
+          manager.sendFromVault([100], 'not-an-address'),
+        ).rejects.toThrow(
+          'Receiver must be an Algorand address or an NFD name, got not-an-address',
+        )
+
+        expect(mockInstanceClient.newGroup().vaultSend).not.toHaveBeenCalled()
+      })
+
+      it("rejects receiverType 'nfdVault' given a plain address", async () => {
+        await expect(
+          manager.sendFromVault([100], OTHER_ADDRESS, {
+            receiverType: 'nfdVault',
+          }),
+        ).rejects.toThrow("receiverType 'nfdVault' needs an NFD name")
+
+        expect(mockInstanceClient.newGroup().vaultSend).not.toHaveBeenCalled()
+      })
+
+      it('falls back to the owner when the NFD has no deposit account', async () => {
+        vi.spyOn(client, 'resolve').mockResolvedValue({
+          ...receiverNfd,
+          depositAccount: undefined,
+        })
+
+        await manager.sendFromVault([100], 'receiver.algo')
+
+        expect(mockInstanceClient.newGroup().vaultSend).toHaveBeenCalledWith(
+          expect.objectContaining({
+            args: expect.objectContaining({ receiver: OTHER_ADDRESS }),
+          }),
+        )
+      })
     })
   })
 

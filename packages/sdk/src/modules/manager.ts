@@ -1,9 +1,17 @@
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
-import { Address } from 'algosdk'
+import { Address, type Transaction } from 'algosdk'
 
-import { ALGORAND_ZERO_ADDRESS } from '../constants'
+import {
+  ALGORAND_ZERO_ADDRESS,
+  APP_CALL_STATIC_FEE,
+  RENEW_STATIC_FEE,
+  VAULT_FEE_PER_ASSET,
+  VAULT_OPT_IN_MBR,
+} from '../constants'
 import { parseTransactionError } from '../utils/error-parser'
 import { strToUint8Array, concatUint8Arrays } from '../utils/internal/bytes'
+import { toAmount } from '../utils/internal/numbers'
+import { isValidName } from '../utils/nfd'
 
 import { BaseModule } from './base'
 import { LookupModule } from './lookup'
@@ -69,6 +77,44 @@ export class NfdManager extends BaseModule {
   }
 
   /**
+   * Assert the NFD is neither listed for sale nor expired
+   *
+   * The instance contract gates most owner-driven writes behind
+   * `notForSaleOrExpired()`, so a live listing or a lapsed expiration blocks
+   * them until the owner cancels the sale or renews. Checking here turns an
+   * opaque `assert` failure into an error that names the cause and the cure.
+   *
+   * @param nfd - The resolved NFD
+   * @param action - What the caller was trying to do, for the message
+   * @throws If the NFD is for sale or expired
+   */
+  private assertNotForSaleOrExpired(nfd: Nfd, action: string): void {
+    if (nfd.expired) {
+      throw new Error(
+        `Cannot ${action} because the NFD has expired. Call renew() first.`,
+      )
+    }
+    if (nfd.sellAmount) {
+      throw new Error(
+        `Cannot ${action} while the NFD is listed for sale. Call cancelSale() first.`,
+      )
+    }
+  }
+
+  /**
+   * Assert the NFD is not mid-mint
+   *
+   * @param nfd - The resolved NFD
+   * @param action - What the caller was trying to do, for the message
+   * @throws If the NFD is still minting
+   */
+  private assertNotMinting(nfd: Nfd, action: string): void {
+    if (nfd.state === 'minting') {
+      throw new Error(`Cannot ${action} while the NFD is still minting`)
+    }
+  }
+
+  /**
    * Split fields and values if any values exceed the byte limit
    * @param fieldsAndValues - Array of alternating field names and values
    * @returns Array of field names and values, potentially split into chunks
@@ -123,8 +169,10 @@ export class NfdManager extends BaseModule {
     const addressToLink =
       typeof address === 'string' ? Address.fromString(address) : address
 
-    // If address to link is not the default signer (owner), add a signer for it
-    if (signer.addr !== addressToLink) {
+    // If address to link is not the default signer (owner), add a signer for it.
+    // Compare the encoded addresses: two Address instances for the same account
+    // are never reference-equal.
+    if (signer.addr.toString() !== addressToLink.toString()) {
       this.algorand.setSigner(addressToLink, signer.signer)
     }
 
@@ -509,12 +557,32 @@ export class NfdManager extends BaseModule {
 
   /**
    * Renew the NFD
-   * @param years - Number of years to renew for (1-20, default 1)
+   *
+   * The contract derives the new expiration from the amount paid, capped by
+   * the registry's `maxYearsAllowed`, so the upper bound is read from the
+   * registry rather than assumed.
+   *
+   * @param years - Number of whole years to renew for (default 1)
    * @returns The updated NFD
-   * @throws If the renewal fails
+   * @throws If `years` is not a whole number of at least 1, exceeds the
+   *   registry's maximum, or the renewal fails
    */
   public async renew(years: number = 1): Promise<Nfd> {
     const signer = this.requireSigner()
+
+    if (!Number.isInteger(years) || years < 1) {
+      throw new Error(
+        `Renewal years must be a whole number of at least 1, got ${years}`,
+      )
+    }
+
+    const { maxYearsAllowed } = await this.getConstraints()
+    if (BigInt(years) > maxYearsAllowed) {
+      throw new Error(
+        `Renewal years must be at most ${maxYearsAllowed}, got ${years}`,
+      )
+    }
+
     const nfd = await this.getNfd()
 
     if (!nfd.appID) {
@@ -539,7 +607,7 @@ export class NfdManager extends BaseModule {
         .newGroup()
         .renew({
           args: { payment: paymentTxn },
-          staticFee: AlgoAmount.MicroAlgos(5000),
+          staticFee: AlgoAmount.MicroAlgos(RENEW_STATIC_FEE),
         })
         .send({ populateAppCallResources: true })
     } catch (error) {
@@ -553,20 +621,43 @@ export class NfdManager extends BaseModule {
 
   /**
    * List the NFD for sale on the marketplace
+   *
+   * The contract refuses to sell an NFD that still has properties, so every
+   * user-defined and verified field has to be cleared first. Calling this on
+   * an NFD already listed re-prices it.
+   *
    * @param price - The sale price in microAlgos
    * @param options - Optional sale configuration
    * @returns The updated NFD
-   * @throws If the listing fails
+   * @throws If the NFD is expired, still minting, or still has properties, or
+   *   if the listing fails
    */
   public async listForSale(
     price: bigint | number,
     options: ListForSaleOptions = {},
   ): Promise<Nfd> {
     const signer = this.requireSigner()
+    const sellAmount = toAmount(price, 'Sale price')
     const nfd = await this.getNfd()
 
     if (signer.addr.toString() !== nfd.owner) {
       throw new Error('Only the owner can list this NFD for sale')
+    }
+
+    if (nfd.expired) {
+      throw new Error(
+        'Cannot list an expired NFD for sale. Call renew() first.',
+      )
+    }
+    this.assertNotMinting(nfd, 'list this NFD for sale')
+
+    // offerForSale asserts the NFD has no boxes left. getNfd() already read
+    // them, so the count is free here.
+    const boxCount = this._boxes?.length ?? 0
+    if (boxCount > 0) {
+      throw new Error(
+        `An NFD can only be sold once its properties are cleared, but ${boxCount} remain. Clear the user-defined and verified fields first.`,
+      )
     }
 
     if (!nfd.appID) {
@@ -582,10 +673,10 @@ export class NfdManager extends BaseModule {
         .newGroup()
         .offerForSale({
           args: {
-            sellAmount: BigInt(price),
+            sellAmount,
             reservedFor,
           },
-          staticFee: AlgoAmount.MicroAlgos(3000),
+          staticFee: AlgoAmount.MicroAlgos(APP_CALL_STATIC_FEE),
         })
         .send({ populateAppCallResources: true })
     } catch (error) {
@@ -602,7 +693,8 @@ export class NfdManager extends BaseModule {
   /**
    * Cancel the sale listing for the NFD
    * @returns The updated NFD
-   * @throws If the cancellation fails
+   * @throws If the NFD is not listed for sale, is expired or still minting, or
+   *   the cancellation fails
    */
   public async cancelSale(): Promise<Nfd> {
     const signer = this.requireSigner()
@@ -611,6 +703,17 @@ export class NfdManager extends BaseModule {
     if (signer.addr.toString() !== nfd.owner) {
       throw new Error('Only the owner can cancel the sale of this NFD')
     }
+
+    if (!nfd.sellAmount) {
+      throw new Error('NFD is not listed for sale')
+    }
+
+    if (nfd.expired) {
+      throw new Error(
+        'Cannot cancel the sale of an expired NFD. Call renew() first.',
+      )
+    }
+    this.assertNotMinting(nfd, 'cancel the sale of this NFD')
 
     if (!nfd.appID) {
       throw new Error('NFD has no application ID')
@@ -623,7 +726,7 @@ export class NfdManager extends BaseModule {
         .newGroup()
         .cancelSale({
           args: {},
-          staticFee: AlgoAmount.MicroAlgos(3000),
+          staticFee: AlgoAmount.MicroAlgos(APP_CALL_STATIC_FEE),
         })
         .send({ populateAppCallResources: true })
     } catch (error) {
@@ -637,17 +740,35 @@ export class NfdManager extends BaseModule {
 
   /**
    * Lock or unlock segment minting for the NFD
+   *
+   * Unlocking sets the price anyone may mint a segment at, and the contract
+   * requires it to be at least the registry's `segmentPlatformCostInUsd`, so
+   * the default of 0 is only valid when locking.
+   *
    * @param lock - Whether to lock (true) or unlock (false) segment minting
    * @param usdPrice - The price in USD cents for minting segments (e.g., 300 = $3.00). Set to 0 if locking.
    * @returns The updated NFD
-   * @throws If the operation fails
+   * @throws If unlocking below the registry minimum, if the NFD is for sale or
+   *   expired, or if the operation fails
    */
   public async lockSegment(lock: boolean, usdPrice: number = 0): Promise<Nfd> {
     const signer = this.requireSigner()
+    const segmentPrice = toAmount(usdPrice, 'Segment price')
     const nfd = await this.getNfd()
 
     if (signer.addr.toString() !== nfd.owner) {
       throw new Error('Only the owner can lock/unlock segments for this NFD')
+    }
+
+    this.assertNotForSaleOrExpired(nfd, 'lock/unlock segments for this NFD')
+
+    if (!lock) {
+      const { segmentPlatformCostInUsd } = await this.getConstraints()
+      if (segmentPrice < segmentPlatformCostInUsd) {
+        throw new Error(
+          `Segment price must be at least ${segmentPlatformCostInUsd} USD cents when unlocking segment minting, got ${segmentPrice}`,
+        )
+      }
     }
 
     if (!nfd.appID) {
@@ -662,9 +783,9 @@ export class NfdManager extends BaseModule {
         .segmentLock({
           args: {
             lock,
-            usdPrice: BigInt(usdPrice),
+            usdPrice: segmentPrice,
           },
-          staticFee: AlgoAmount.MicroAlgos(3000),
+          staticFee: AlgoAmount.MicroAlgos(APP_CALL_STATIC_FEE),
         })
         .send({ populateAppCallResources: true })
     } catch (error) {
@@ -684,7 +805,7 @@ export class NfdManager extends BaseModule {
    *   When locked, only the owner can opt the vault into assets.
    *   When unlocked, anyone can opt the vault into assets.
    * @returns The updated NFD
-   * @throws If the operation fails
+   * @throws If the NFD is for sale or expired, or the operation fails
    */
   public async lockVault(lock: boolean): Promise<Nfd> {
     const signer = this.requireSigner()
@@ -693,6 +814,8 @@ export class NfdManager extends BaseModule {
     if (signer.addr.toString() !== nfd.owner) {
       throw new Error('Only the owner can lock/unlock the vault for this NFD')
     }
+
+    this.assertNotForSaleOrExpired(nfd, 'lock/unlock the vault for this NFD')
 
     if (!nfd.appID) {
       throw new Error('NFD has no application ID')
@@ -705,7 +828,7 @@ export class NfdManager extends BaseModule {
         .newGroup()
         .vaultOptInLock({
           args: { lock },
-          staticFee: AlgoAmount.MicroAlgos(3000),
+          staticFee: AlgoAmount.MicroAlgos(APP_CALL_STATIC_FEE),
         })
         .send({ populateAppCallResources: true })
     } catch (error) {
@@ -720,69 +843,126 @@ export class NfdManager extends BaseModule {
   }
 
   /**
-   * Opt the NFD vault into assets and optionally transfer them
-   * @param assets - Array of ASA IDs to opt into (use 0 for ALGO)
+   * Opt the NFD vault into assets, and optionally transfer one of them
+   *
+   * `options.amount` sends that many base units of the asset to the vault in
+   * the same group. Since the amount applies to one asset, it can only be
+   * given alongside a single asset — call this once per asset to send several.
+   *
+   * The vault's minimum balance rises by {@link VAULT_OPT_IN_MBR} per asset,
+   * and the contract requires the caller to fund it in the same group. That
+   * payment is charged for every asset passed, whether or not the vault is
+   * already opted into it, so filter out assets the vault already holds.
+   *
+   * @param assets - ASA IDs to opt the vault into. `0` (ALGO) needs no opt-in
+   *   and is only meaningful together with `amount`.
    * @param options - Options for the vault operation
    * @returns The updated NFD
-   * @throws If the operation fails
+   * @throws If `assets` is empty, if `amount` is given with more than one
+   *   asset, if the NFD is for sale or expired, or if the operation fails
    */
   public async sendToVault(
     assets: number[],
     options: SendToVaultOptions = {},
   ): Promise<Nfd> {
     const signer = this.requireSigner()
+
+    if (assets.length === 0) {
+      throw new Error('At least one asset must be specified')
+    }
+
+    const sendsAsset = !options.optInOnly && options.amount !== undefined
+    if (sendsAsset && assets.length > 1) {
+      throw new Error(
+        'An amount can only be sent with a single asset. Call sendToVault once per asset, or omit amount to opt the vault in without transferring.',
+      )
+    }
+
+    const amount =
+      options.optInOnly || options.amount === undefined
+        ? 0n
+        : toAmount(options.amount, 'Transfer amount')
+
+    // ALGO needs no opt-in, so it never goes into the vaultOptIn call
+    const assetsToOptIn = assets.filter((assetId) => assetId !== 0)
+
+    if (assetsToOptIn.length === 0 && !sendsAsset) {
+      throw new Error(
+        'Nothing to do: ALGO (asset 0) needs no opt-in, so sending it requires an amount.',
+      )
+    }
+
     const nfd = await this.getNfd()
+
+    this.assertNotForSaleOrExpired(nfd, 'send to the vault')
 
     if (!nfd.appID) {
       throw new Error('NFD has no application ID')
     }
+
+    // Both the MBR payment and the transfer are paid to the vault account
+    const vaultAddress = nfd.nfdAccount
+    if (!vaultAddress) {
+      throw new Error('NFD has no vault account')
+    }
+
     const nfdAppId = BigInt(nfd.appID)
     const nfdInstanceClient = this.getInstanceClient(nfdAppId, signer.addr)
 
-    // Calculate fees based on number of assets
-    const feePerAsset = 1000n
-    const baseFee = 3000n
-    const totalFee = baseFee + feePerAsset * BigInt(assets.length)
+    // Build the payments up front so a failure to construct one is not
+    // reported as though the transaction itself had failed
+
+    // vaultOptIn verifies the transaction immediately before it pays the
+    // vault's added minimum balance, and rejects being first in the group
+    let mbrTxn: Transaction | undefined
+    if (assetsToOptIn.length > 0) {
+      mbrTxn = await this.algorand.createTransaction.payment({
+        sender: signer.addr,
+        receiver: vaultAddress,
+        amount: AlgoAmount.MicroAlgos(
+          VAULT_OPT_IN_MBR * BigInt(assetsToOptIn.length),
+        ),
+      })
+    }
+
+    let transferTxn: Transaction | undefined
+    if (sendsAsset) {
+      const assetId = assets[0]
+      transferTxn =
+        assetId === 0
+          ? await this.algorand.createTransaction.payment({
+              sender: signer.addr,
+              receiver: vaultAddress,
+              amount: AlgoAmount.MicroAlgos(amount),
+              note: options.note,
+            })
+          : await this.algorand.createTransaction.assetTransfer({
+              sender: signer.addr,
+              receiver: vaultAddress,
+              assetId: BigInt(assetId),
+              amount,
+              note: options.note,
+            })
+    }
+
+    // One inner transaction per asset the contract opts into
+    const totalFee =
+      APP_CALL_STATIC_FEE + VAULT_FEE_PER_ASSET * BigInt(assetsToOptIn.length)
 
     try {
       const group = nfdInstanceClient.newGroup()
 
-      // Opt the vault into the assets
-      group.vaultOptIn({
-        args: { assets: assets.map(BigInt) },
-        staticFee: AlgoAmount.MicroAlgos(totalFee),
-      })
+      // Order matters: the MBR payment has to sit directly before the opt-in
+      if (mbrTxn) {
+        group.addTransaction(mbrTxn)
+        group.vaultOptIn({
+          args: { assets: assetsToOptIn.map(BigInt) },
+          staticFee: AlgoAmount.MicroAlgos(totalFee),
+        })
+      }
 
-      // If not opt-in only, add asset transfer transactions
-      if (!options.optInOnly && assets.length > 0) {
-        const vaultAddress = nfd.nfdAccount
-        if (!vaultAddress) {
-          throw new Error('NFD has no vault account')
-        }
-
-        for (const assetId of assets) {
-          if (assetId === 0) {
-            // ALGO transfer
-            const paymentTxn = await this.algorand.createTransaction.payment({
-              sender: signer.addr,
-              receiver: vaultAddress,
-              amount: AlgoAmount.MicroAlgos(options.amount ?? 0n),
-              note: options.note,
-            })
-            group.addTransaction(paymentTxn)
-          } else {
-            // ASA transfer
-            const assetTxn =
-              await this.algorand.createTransaction.assetTransfer({
-                sender: signer.addr,
-                receiver: vaultAddress,
-                assetId: BigInt(assetId),
-                amount: options.amount ?? 0n,
-                note: options.note,
-              })
-            group.addTransaction(assetTxn)
-          }
-        }
+      if (transferTxn) {
+        group.addTransaction(transferTxn)
       }
 
       await group.send({ populateAppCallResources: true })
@@ -798,12 +978,75 @@ export class NfdManager extends BaseModule {
   }
 
   /**
+   * Resolve a vault receiver to an Algorand address
+   *
+   * `vaultSend`'s receiver argument is an ABI `address`, so an NFD name has to
+   * be resolved to one first. `receiverType` picks which of the receiving
+   * NFD's accounts to send to.
+   *
+   * @param receiver - An Algorand address, or an NFD name to resolve
+   * @param receiverType - Which account of a receiving NFD to send to:
+   *   its deposit account (`'account'`) or its vault (`'nfdVault'`)
+   * @returns The receiving Algorand address
+   * @throws If the receiver is neither a valid address nor a resolvable NFD
+   *   name, or `'nfdVault'` is used with a plain address
+   */
+  private async resolveVaultReceiver(
+    receiver: string,
+    receiverType: 'account' | 'nfdVault' = 'account',
+  ): Promise<string> {
+    if (!isValidName(receiver)) {
+      if (receiverType === 'nfdVault') {
+        throw new Error(
+          `receiverType 'nfdVault' needs an NFD name as the receiver, got the address ${receiver}`,
+        )
+      }
+
+      // Reject a malformed address here rather than letting ABI encoding fail
+      // inside the send, where it reads as a transaction failure
+      try {
+        Address.fromString(receiver)
+      } catch {
+        throw new Error(
+          `Receiver must be an Algorand address or an NFD name, got ${receiver}`,
+        )
+      }
+
+      return receiver
+    }
+
+    const receiverNfd = await this.client.resolve(receiver, { view: 'tiny' })
+
+    if (receiverType === 'nfdVault') {
+      if (!receiverNfd.nfdAccount) {
+        throw new Error(`NFD ${receiver} has no vault account`)
+      }
+      return receiverNfd.nfdAccount
+    }
+
+    const depositAccount = receiverNfd.depositAccount ?? receiverNfd.owner
+    if (!depositAccount) {
+      throw new Error(`NFD ${receiver} has no deposit account`)
+    }
+    return depositAccount
+  }
+
+  /**
    * Send assets from the NFD vault to a receiver
-   * @param assets - Array of ASA IDs to send from the vault
-   * @param receiver - The receiving Algorand address or NFD name
+   *
+   * `options.amount` applies to a single asset. Passing several assets means
+   * "send the full balance of each", which the contract only accepts with no
+   * amount — it closes the vault out of every asset in the list.
+   *
+   * @param assets - ASA IDs to send from the vault, or `[0]` to send ALGO
+   * @param receiver - The receiving Algorand address, or an NFD name to
+   *   resolve to one
    * @param options - Options for the vault operation
    * @returns The updated NFD
-   * @throws If the operation fails
+   * @throws If `assets` is empty, if `amount` is given with more than one
+   *   asset, if ALGO is combined with other assets or sent without an amount,
+   *   if the NFD is for sale or expired, if the receiver cannot be resolved,
+   *   or if the operation fails
    */
   public async sendFromVault(
     assets: number[],
@@ -811,17 +1054,66 @@ export class NfdManager extends BaseModule {
     options: SendFromVaultOptions = {},
   ): Promise<Nfd> {
     const signer = this.requireSigner()
+
+    if (assets.length === 0) {
+      throw new Error('At least one asset must be specified')
+    }
+
+    const amount =
+      options.amount === undefined
+        ? 0n
+        : toAmount(options.amount, 'Transfer amount')
+
+    // vaultSend applies the amount to a single asset; with more than one it
+    // closes out each in full, which the contract requires amount 0 for
+    if (amount !== 0n && assets.length > 1) {
+      throw new Error(
+        'An amount can only be sent with a single asset. Call sendFromVault once per asset, or omit amount to send the full balance of each.',
+      )
+    }
+
+    // ALGO has no close-out path in the contract: it is sent by explicit
+    // amount, on its own
+    if (assets.includes(0)) {
+      if (assets.length > 1) {
+        throw new Error(
+          'ALGO (asset 0) must be sent from the vault on its own, not alongside other assets',
+        )
+      }
+      if (amount === 0n) {
+        throw new Error(
+          'Sending ALGO (asset 0) from the vault requires an amount',
+        )
+      }
+    }
+
     const nfd = await this.getNfd()
 
     if (signer.addr.toString() !== nfd.owner) {
       throw new Error('Only the owner can send from the vault')
     }
 
+    this.assertNotForSaleOrExpired(nfd, 'send from the vault')
+
     if (!nfd.appID) {
       throw new Error('NFD has no application ID')
     }
-    if (assets.length === 0) {
-      throw new Error('At least one asset must be specified')
+
+    const receiverAddress = await this.resolveVaultReceiver(
+      receiver,
+      options.receiverType,
+    )
+
+    // The contract claws its own ASA back rather than transferring it, and
+    // only ever to the owner
+    if (
+      nfd.asaID &&
+      assets.includes(nfd.asaID) &&
+      receiverAddress !== nfd.owner
+    ) {
+      throw new Error(
+        `The NFD's own ASA (${nfd.asaID}) can only be sent from the vault to the owner`,
+      )
     }
 
     const nfdAppId = BigInt(nfd.appID)
@@ -830,18 +1122,17 @@ export class NfdManager extends BaseModule {
     const primaryAsset = BigInt(assets[0])
     const otherAssets = assets.slice(1).map(BigInt)
 
-    // Calculate fees based on number of assets
-    const feePerAsset = 1000n
-    const baseFee = 3000n
-    const totalFee = baseFee + feePerAsset * BigInt(assets.length)
+    // One inner transaction per asset the contract sends
+    const totalFee =
+      APP_CALL_STATIC_FEE + VAULT_FEE_PER_ASSET * BigInt(assets.length)
 
     try {
       await nfdInstanceClient
         .newGroup()
         .vaultSend({
           args: {
-            amount: options.amount ?? 0n,
-            receiver,
+            amount,
+            receiver: receiverAddress,
             note: options.note ?? '',
             asset: primaryAsset,
             otherAssets,

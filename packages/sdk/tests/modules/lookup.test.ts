@@ -180,6 +180,17 @@ describe('LookupModule', () => {
       expect(nfd.appID).toBe(123)
       expect(registryFake.appClient.getBoxValue).not.toHaveBeenCalled()
     })
+
+    it('treats an all-digit NFD name as a name, not an app ID', async () => {
+      // parseInt('123.algo') is 123 — a real app, but never this NFD
+      const { lookup, registryFake } = setup()
+      registryFake.appClient.getBoxValue.mockResolvedValue(nameBox)
+
+      const nfd = await lookup.resolve('123.algo')
+
+      expect(registryFake.appClient.getBoxValue).toHaveBeenCalledTimes(1)
+      expect(nfd.appID).toBe(Number(NFD_APP_ID))
+    })
   })
 
   describe('error handling', () => {

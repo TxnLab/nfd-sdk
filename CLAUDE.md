@@ -25,6 +25,7 @@ pnpm test:watch           # Run tests in watch mode
 pnpm test:coverage        # Run tests with v8 coverage
 pnpm lint                 # ESLint across all packages
 pnpm format               # Prettier --write across all packages
+pnpm format:check         # Prettier --check from the root (what CI runs)
 pnpm typecheck            # TypeScript type checking (SDK only)
 pnpm build:examples       # Build all example apps
 ```
@@ -56,7 +57,7 @@ Regenerate all: `pnpm --filter @txnlab/nfd-sdk generate`
 - **MetadataModule** (`modules/metadata.ts`) — avatar/banner image retrieval with IPFS conversion
 - **MintingModule** (`modules/minting.ts`) — mint new NFDs with price quoting
 - **PurchasingModule** (`modules/purchasing.ts`) — claim reserved NFDs, buy from marketplace
-- **NfdManager** (`modules/manager.ts`) — link addresses, set metadata, set primary NFD
+- **NfdManager** (`modules/manager.ts`) — link addresses, set metadata, set primary NFD, renew, list/cancel a sale, lock segments and the vault, send to and from the vault
 
 All modules extend `BaseModule` (`modules/base.ts`), which provides access to the Algorand client, registry contract client, instance contract client, and signer management.
 
@@ -85,7 +86,67 @@ Consequences to keep in mind:
 
 ### Constants
 
-`src/constants.ts` contains registry app IDs (`NfdRegistryId` enum: MAINNET=760937186, TESTNET=84366825) and API base URLs.
+`src/constants.ts` contains registry app IDs (`NfdRegistryId` enum: MAINNET=760937186, TESTNET=84366825), API base URLs, the Algorand zero address, the static fees contract calls are sent with (`APP_CALL_STATIC_FEE`, `RENEW_STATIC_FEE`, `VAULT_FEE_PER_ASSET`), and the vault's per-asset minimum balance (`VAULT_OPT_IN_MBR`). Put new fee figures here rather than inline — the same `3000n` appears in half a dozen methods and drifted apart once already.
+
+Protocol limits are **not** constants: `maxYearsAllowed` and `segmentPlatformCostInUsd` come from `BaseModule.getConstraints()` at call time. A `MAX_RENEWAL_YEARS = 20` constant used to sit here and was wrong — the registry owns that number.
+
+### The contract source
+
+**Read the TealScript before writing or reviewing a method that wraps a contract call.** The ARC-56 JSON gives arg types and not a single `assert`, and every rule in the table below was shipped wrong because the JSON looked sufficient.
+
+The contracts are a separate repo (`TxnLab/nfd-contracts`), not a dependency of this one. Set `$NFD_CONTRACTS` to your checkout — the two files that matter are:
+
+```
+$NFD_CONTRACTS/contracts/v3/contracts/
+  NFDInstance.algo.ts    # per-NFD instance: vault, sale, locks, renew, fields
+  NFDRegistry.algo.ts    # registry: mint, constraints, name/address boxes
+```
+
+If it is unset, find an existing checkout by the file rather than assuming a layout:
+
+```bash
+# macOS
+NFD_CONTRACTS=$(mdfind 'kMDItemFSName == "NFDInstance.algo.ts"' | head -1)
+# portable
+NFD_CONTRACTS=$(find ~ -maxdepth 7 -type f -name NFDInstance.algo.ts \
+  -not -path '*/node_modules/*' 2>/dev/null | head -1)
+```
+
+If neither turns anything up, the repo is not cloned — say so rather than guessing from the ABI.
+
+Useful grep targets in `NFDInstance.algo.ts`: the private helpers at the bottom of the file — `mustBeCalledByOwner()`, `notForSaleOrExpired()`, `assertOwnerCalledNotForSaleOrExpired()`, `isForSale()`, `isExpired()` — tell you a method's preconditions in one line, since almost every public method opens with a call to one of them.
+
+### Contract preconditions the SDK mirrors
+
+| Contract method  | Asserts                                                                                                                                                                                                                  | Mirrored in                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `vaultOptIn`     | Not first in group; the transaction immediately before pays the vault `100_000 × assets.length`; `notForSaleOrExpired()`; owner only when the vault is locked                                                            | `sendToVault` builds `[MBR payment] → [vaultOptIn] → [optional transfer]` |
+| `vaultSend`      | `assertOwnerCalledNotForSaleOrExpired()`; receiver ≠ zero address; `otherAssets` empty whenever `amount !== 0`; for ALGO (`asset === 0`) `amount > 0` and no other assets; the NFD's own ASA is clawed to the owner only | `sendFromVault`                                                           |
+| `offerForSale`   | Owner; not expired; not minting; **`totalBoxes === 0`**                                                                                                                                                                  | `listForSale` (box count comes free from `getNfd()`)                      |
+| `cancelSale`     | Owner; not expired; not minting; `isForSale()`                                                                                                                                                                           | `cancelSale`                                                              |
+| `segmentLock`    | `assertOwnerCalledNotForSaleOrExpired()`; on unlock, `usdPrice >= segmentPlatformCostInUsd` (cents)                                                                                                                      | `lockSegment`                                                             |
+| `vaultOptInLock` | `assertOwnerCalledNotForSaleOrExpired()`                                                                                                                                                                                 | `lockVault`                                                               |
+| `renew`          | Payment ≥ one year's price; expiration capped by the registry's `maxYearsAllowed`; metadata must be cleared if someone other than the owner claims an expired NFD                                                        | `renew`                                                                   |
+| `postOffer`      | Nothing — it only logs an ARC-28 event                                                                                                                                                                                   | `makeOffer` needs no precondition checks                                  |
+
+The recurring shape: **listing an NFD for sale or letting it expire blocks nearly every owner-driven write** until it is cancelled or renewed. `NfdManager.assertNotForSaleOrExpired` and `assertNotMinting` exist to turn those into errors that name the cure.
+
+Two more that bite when adding a method:
+
+- **Check the ABI arg types against `src/contracts/minimal/*.arc56.json` before writing the JSDoc.** `vaultSend`'s `receiver` is an ABI `address`, not a string, so "accepts an NFD name" was a promise the code could not keep — a name has to be resolved to an address first (`NfdManager.resolveVaultReceiver`). A doc comment describing the NFD _API_'s behavior is not evidence of what the _contract_ accepts.
+- **Coerce caller-supplied amounts with `toAmount()` (`src/utils/internal/numbers.ts`), never bare `BigInt()`.** `BigInt(1.5)` throws a `RangeError` that names neither the parameter nor the method; `toAmount(price, 'Sale price')` says which argument was wrong, and rejects negatives and unsafe integers as well.
+
+Validate arguments and throw _before_ the `try` that wraps the send, so a bad argument is not reported as `Failed to …: <message>` as though the transaction had failed. Prefer checking a precondition the resolved `Nfd` already answers over letting an opaque `assert` failure come back from chain — `getNfd()` has the state and the boxes cached.
+
+### What the tests can and cannot prove
+
+`tests/modules/*.test.ts` mock the typed client and the composer wholesale. They verify **the SDK's own logic** — which guard fires, which args and fees a call is given, what order transactions are added in — and nothing about whether a node would accept the result. The `sendToVault` group was malformed for the contract's `groupIndex`/MBR asserts while its tests were green.
+
+So:
+
+- Assert on group **order** (`invocationCallOrder` on the group mock) wherever the contract cares about position. `TransactionComposer.build()` iterates `this.txns` in push order, so add-order is group order.
+- A green suite is not evidence a call works on chain. Confirming that needs a `simulate()` against TestNet or a LocalNet run, which nothing in CI does today.
+- When a change is driven by a contract `assert`, quote the assert in the test comment. The next reader cannot re-derive it from the ABI.
 
 ## Code Style
 
@@ -101,9 +162,11 @@ Angular commit format: `type(scope): subject`
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
 Scopes: `core`, `api`, `contracts`, `metadata`, `purchasing`, etc.
 
-`feat` → minor version bump, `fix` → patch, `BREAKING CHANGE` in footer → major (manual).
+`feat` → minor version bump, `fix` → patch, `BREAKING CHANGE` in footer → major.
+
+Versions are computed by semantic-release from the commits since the last tag, so **do not hand-edit the `version` field** in `packages/sdk/package.json` — `@semantic-release/npm` overwrites it and `@semantic-release/git` commits the result.
 
 ## CI
 
-PR checks (`pr.yml`): lint → typecheck → test → build → build:examples. All must pass.
-Publishing (`ci.yml`): automatic on push to main/alpha/beta/next branches via TanStack publish config.
+PR checks (`ci.yml`): lint → format:check → typecheck → test → build → build:examples. All must pass. The same sequence is the root `ci` script, which `release` runs first.
+Publishing (`release.yml`): on push to a release branch, semantic-release publishes to npm via OIDC trusted publishing (no `NPM_TOKEN`), cuts the GitHub release, and commits `chore(release): x.y.z [skip ci]`.

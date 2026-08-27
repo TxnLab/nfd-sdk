@@ -299,8 +299,10 @@ export interface SendToVaultOptions {
   optInOnly?: boolean
 
   /**
-   * Amount to send in base units of the asset. Required when sending a single asset.
-   * Ignored when sending multiple assets (all of each asset is sent).
+   * Amount to send, in base units of the asset. The amount applies to one
+   * asset, so it can only be given alongside a single asset — call
+   * `sendToVault` once per asset to send several. Omit it to opt the vault
+   * into the assets without transferring anything.
    */
   amount?: bigint
 
@@ -315,8 +317,11 @@ export interface SendToVaultOptions {
  */
 export interface SendFromVaultOptions {
   /**
-   * Amount to send in base units of the asset. Required when sending a single asset.
-   * Ignored when sending multiple assets (all of each asset is sent).
+   * Amount to send, in base units of the asset. The amount applies to one
+   * asset, so it can only be given alongside a single asset — passing several
+   * assets sends the full balance of each and closes the vault out of them.
+   * Required when sending ALGO (asset 0), which has no close-out path.
+   * @default 0n
    */
   amount?: bigint
 
@@ -326,7 +331,9 @@ export interface SendFromVaultOptions {
   note?: string
 
   /**
-   * Type of receiver
+   * Which account to send to when `receiver` is an NFD name: the NFD's
+   * deposit account, or its vault. Ignored when `receiver` is already an
+   * Algorand address, and an error to combine `'nfdVault'` with one.
    * @default 'account'
    */
   receiverType?: 'account' | 'nfdVault'
