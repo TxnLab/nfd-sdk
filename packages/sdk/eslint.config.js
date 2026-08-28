@@ -10,6 +10,11 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         project: './tsconfig.json',
+        // Anchor the relative project path to this file. typescript-eslint
+        // used to resolve it against process.cwd(), which happened to be this
+        // package under `pnpm -r lint`; it now resolves against the workspace
+        // root, where no tsconfig.json exists.
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
@@ -25,6 +30,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         project: './tsconfig.eslint.json',
+        tsconfigRootDir: import.meta.dirname,
       },
     },
   },

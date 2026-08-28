@@ -227,8 +227,8 @@ export function App() {
                       onClick={() => handleSetPrimaryNfd(nfd)}
                       disabled={Boolean(
                         isSettingPrimary ||
-                          isSyncing ||
-                          (primaryNfd && primaryNfd.name === nfd.name),
+                        isSyncing ||
+                        (primaryNfd && primaryNfd.name === nfd.name),
                       )}
                     >
                       Set as Primary

@@ -343,13 +343,7 @@ export interface SendFromVaultOptions {
  * Field types that can be verified on an NFD
  */
 export type VerifyField =
-  | 'blueskydid'
-  | 'twitter'
-  | 'github'
-  | 'domain'
-  | 'email'
-  | 'avatar'
-  | 'banner'
+  'blueskydid' | 'twitter' | 'github' | 'domain' | 'email' | 'avatar' | 'banner'
 
 /**
  * Result of starting a verification request

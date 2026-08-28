@@ -13,6 +13,7 @@ export default tseslint.config(
       globals: globals.browser,
       parserOptions: {
         project: './tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
@@ -33,6 +34,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         project: './tsconfig.node.json',
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
