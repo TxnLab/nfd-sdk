@@ -11,7 +11,7 @@ NFDomains SDK (`@txnlab/nfd-sdk`) — a TypeScript SDK for interacting with Non-
 - **`packages/sdk/`** — the SDK package (published as `@txnlab/nfd-sdk`)
 - **`examples/`** — React/Vite example apps demonstrating SDK features
 - Package manager: **pnpm v10+** with workspaces (pinned by the root `packageManager` field, which CI reads too)
-- Node version: **22.14.0** (see `.nvmrc`)
+- Node version: **22.23.2** (see `.nvmrc`)
 
 ## Commands
 
