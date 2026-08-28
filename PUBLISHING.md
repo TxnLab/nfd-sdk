@@ -37,11 +37,14 @@ The bump comes from the commit types since the last tag, following the [Angular 
 | Commit                                      | Bump  |
 | ------------------------------------------- | ----- |
 | `feat:`                                     | minor |
-| `fix:`, `perf:`, `refactor:`                | patch |
+| `fix:`, `perf:`                             | patch |
+| `refactor:`, `revert:`                      | patch |
 | `BREAKING CHANGE:` in the footer            | major |
 | `docs:`, `style:`, `test:`, `chore:`, `ci:` | none  |
 
 A push containing only no-bump types publishes nothing — the workflow succeeds and semantic-release logs that there is no release to make.
+
+`refactor` and `revert` are **not** stock behaviour. The Angular preset ships rules for `feat`, `fix`, `perf` and breaking changes only, so `.releaserc.js` adds them through `releaseRules` on the commit-analyzer. Without that, a refactor-only release cut nothing while the notes config still advertised a "Code Refactoring" section that could never appear on its own — which is exactly how the 2.0.1 client regeneration came to sit on `main`, merged and unpublished.
 
 ### A major needs the `BREAKING CHANGE:` footer
 

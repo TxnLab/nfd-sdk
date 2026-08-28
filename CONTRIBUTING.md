@@ -149,6 +149,8 @@ Must be one of the following. The right-hand column is the version bump the type
 
 Only `feat`, `fix`, `perf` and `refactor` appear in the release notes. The rest are still part of the history; they just do not produce a release on their own.
 
+`refactor` bumps because `.releaserc.js` adds it (along with `revert`) through `releaseRules`. The Angular preset on its own releases for `feat`, `fix`, `perf` and breaking changes only — see [PUBLISHING.md](./PUBLISHING.md#version-bumps).
+
 ### Scope
 
 The scope could be anything specifying the place of the commit change. For example `core`, `api`, or `contracts`.
