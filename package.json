@@ -9,9 +9,10 @@
     "build:examples": "pnpm --filter './examples/*' build",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
-    "format": "pnpm -r format",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "pnpm --filter @txnlab/nfd-sdk typecheck",
-    "ci": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run build:examples",
+    "ci": "pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run build:examples",
     "release": "pnpm run ci && semantic-release",
     "fresh-install": "rm -rf node_modules packages/*/node_modules examples/*/node_modules && pnpm install"
   },
@@ -59,7 +60,8 @@
     "globals": "^14.0.0",
     "prettier": "^3.5.1",
     "semantic-release": "^25.0.3",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.24.1"
   },
   "pnpm": {
     "overrides": {

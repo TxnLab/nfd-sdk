@@ -8,22 +8,20 @@ export function strToUint8Array(str: string): Uint8Array {
 }
 
 /**
- * Concatenate two Uint8Arrays
- * @param array1 - The first array
- * @param array2 - The second array
+ * Concatenate any number of Uint8Arrays
+ * @param arrays - The arrays to concatenate, in order
  * @returns The concatenated array
  */
-export function concatUint8Arrays(
-  array1: Uint8Array,
-  array2: Uint8Array,
-): Uint8Array {
-  const concatenatedArray = new Uint8Array(array1.length + array2.length)
+export function concatUint8Arrays(...arrays: Uint8Array[]): Uint8Array {
+  const totalLength = arrays.reduce((total, array) => total + array.length, 0)
+  const concatenatedArray = new Uint8Array(totalLength)
 
-  // Set the first array values
-  concatenatedArray.set(array1, 0)
-
-  // Set the second array values starting from the end of the first array
-  concatenatedArray.set(array2, array1.length)
+  // Set each array's values starting from the end of the previous one
+  let offset = 0
+  for (const array of arrays) {
+    concatenatedArray.set(array, offset)
+    offset += array.length
+  }
 
   return concatenatedArray
 }

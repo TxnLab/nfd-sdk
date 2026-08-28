@@ -77,6 +77,9 @@ importers:
       typescript:
         specifier: ^5.5.3
         version: 5.7.3
+      typescript-eslint:
+        specifier: ^8.24.1
+        version: 8.25.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3)
 
   examples/api-search:
     dependencies:
@@ -84,8 +87,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/sdk
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -113,16 +116,16 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^8.2.2
-        version: 8.2.2(algosdk@3.5.2)
+        version: 8.2.2(algosdk@3.7.0)
       '@txnlab/nfd-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       '@txnlab/use-wallet-react':
         specifier: ^4.0.0
-        version: 4.0.0(algosdk@3.5.2)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.0.0(algosdk@3.7.0)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       lute-connect:
         specifier: ^1.4.1
         version: 1.4.1
@@ -153,16 +156,16 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^8.2.2
-        version: 8.2.2(algosdk@3.5.2)
+        version: 8.2.2(algosdk@3.7.0)
       '@txnlab/nfd-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       '@txnlab/use-wallet-react':
         specifier: ^4.0.0
-        version: 4.0.0(algosdk@3.5.2)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.0.0(algosdk@3.7.0)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       lute-connect:
         specifier: ^1.4.1
         version: 1.4.1
@@ -209,16 +212,16 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^8.2.2
-        version: 8.2.2(algosdk@3.5.2)
+        version: 8.2.2(algosdk@3.7.0)
       '@txnlab/nfd-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       '@txnlab/use-wallet-react':
         specifier: ^4.0.0
-        version: 4.0.0(algosdk@3.5.2)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.0.0(algosdk@3.7.0)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       lute-connect:
         specifier: ^1.4.1
         version: 1.4.1
@@ -251,8 +254,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/sdk
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -282,8 +285,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/sdk
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -313,8 +316,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/sdk
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -342,16 +345,16 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^8.2.2
-        version: 8.2.2(algosdk@3.5.2)
+        version: 8.2.2(algosdk@3.7.0)
       '@txnlab/nfd-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       '@txnlab/use-wallet-react':
         specifier: ^4.0.0
-        version: 4.0.0(algosdk@3.5.2)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.0.0(algosdk@3.7.0)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       lute-connect:
         specifier: ^1.4.1
         version: 1.4.1
@@ -382,16 +385,16 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^8.2.2
-        version: 8.2.2(algosdk@3.5.2)
+        version: 8.2.2(algosdk@3.7.0)
       '@txnlab/nfd-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       '@txnlab/use-wallet-react':
         specifier: ^4.0.0
-        version: 4.0.0(algosdk@3.5.2)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 4.0.0(algosdk@3.7.0)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       lute-connect:
         specifier: ^1.4.1
         version: 1.4.1
@@ -422,14 +425,14 @@ importers:
     dependencies:
       '@algorandfoundation/algokit-utils':
         specifier: ^8.2.2
-        version: 8.2.2(algosdk@3.5.2)
+        version: 8.2.2(algosdk@3.7.0)
       '@hey-api/client-fetch':
         specifier: ^0.8.1
         version: 0.8.1
     devDependencies:
       '@algorandfoundation/algokit-client-generator':
         specifier: ^4.0.8
-        version: 4.0.8(@algorandfoundation/algokit-utils@8.2.2(algosdk@3.5.2))(algosdk@3.5.2)
+        version: 4.0.8(@algorandfoundation/algokit-utils@8.2.2(algosdk@3.7.0))(algosdk@3.7.0)
       '@hey-api/openapi-ts':
         specifier: ^0.64.5
         version: 0.64.5(magicast@0.3.5)(typescript@5.9.3)
@@ -449,8 +452,8 @@ importers:
         specifier: ^3.0.7
         version: 3.0.7(vitest@3.0.7)
       algosdk:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^3.7.0
+        version: 3.7.0
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -1706,6 +1709,10 @@ packages:
     resolution: {integrity: sha512-frhGtZl1JvfrLRKmMvUm880wj4OiWsWo2FhbreNWh7pdFsKuWPj60fV682wt/CYefLI70iwHavPOwGBkTVt0VA==}
     engines: {node: '>=18.0.0'}
 
+  algosdk@3.7.0:
+    resolution: {integrity: sha512-6mr5w+A+A87/rAd4Y5hSmKSfvLkOKeik81w8Tte9ZxSqnwqUuWUioQsJail3ZyCbJtEctJXJTxe7Sx50/lQi3g==}
+    engines: {node: '>=18.0.0'}
+
   alien-signals@0.4.14:
     resolution: {integrity: sha512-itUAVzhczTmP2U5yX67xVpsbbOiquusbWVyA9N+sy6+r6YVbFkahXvNCeEPWEOMhwDYwbVbGHFkVL03N9I5g+Q==}
 
@@ -2457,6 +2464,7 @@ packages:
   eslint@9.39.0:
     resolution: {integrity: sha512-iy2GE3MHrYTL5lrCtMZ0X1KLEKKUjmK0kzwcnefhR66txcEmXZD2YWgR5GNdcEwkNx3a0siYkSvl0vIC+Svjmg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -4902,18 +4910,18 @@ snapshots:
 
   '@actions/io@3.0.2': {}
 
-  '@algorandfoundation/algokit-client-generator@4.0.8(@algorandfoundation/algokit-utils@8.2.2(algosdk@3.5.2))(algosdk@3.5.2)':
+  '@algorandfoundation/algokit-client-generator@4.0.8(@algorandfoundation/algokit-utils@8.2.2(algosdk@3.7.0))(algosdk@3.7.0)':
     dependencies:
-      '@algorandfoundation/algokit-utils': 8.2.2(algosdk@3.5.2)
-      algosdk: 3.5.2
+      '@algorandfoundation/algokit-utils': 8.2.2(algosdk@3.7.0)
+      algosdk: 3.7.0
       chalk: 4.1.2
       change-case: 5.4.4
       commander: 11.1.0
       jsonschema: 1.5.0
 
-  '@algorandfoundation/algokit-utils@8.2.2(algosdk@3.5.2)':
+  '@algorandfoundation/algokit-utils@8.2.2(algosdk@3.7.0)':
     dependencies:
-      algosdk: 3.5.2
+      algosdk: 3.7.0
       buffer: 6.0.3
 
   '@ampproject/remapping@2.3.0':
@@ -5196,6 +5204,11 @@ snapshots:
   '@eslint-community/eslint-utils@4.4.1(eslint@9.39.0(jiti@2.4.2))':
     dependencies:
       eslint: 9.39.0(jiti@2.4.2)
+      eslint-visitor-keys: 3.4.3
+
+  '@eslint-community/eslint-utils@4.9.0(eslint@9.21.0(jiti@2.4.2))':
+    dependencies:
+      eslint: 9.21.0(jiti@2.4.2)
       eslint-visitor-keys: 3.4.3
 
   '@eslint-community/eslint-utils@4.9.0(eslint@9.39.0(jiti@2.4.2))':
@@ -5860,11 +5873,11 @@ snapshots:
 
   '@tanstack/store@0.7.0': {}
 
-  '@txnlab/use-wallet-react@4.0.0(algosdk@3.5.2)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@txnlab/use-wallet-react@4.0.0(algosdk@3.7.0)(lute-connect@1.4.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tanstack/react-store': 0.7.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@txnlab/use-wallet': 4.0.0(algosdk@3.5.2)(lute-connect@1.4.1)
-      algosdk: 3.5.2
+      '@txnlab/use-wallet': 4.0.0(algosdk@3.7.0)(lute-connect@1.4.1)
+      algosdk: 3.7.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     optionalDependencies:
@@ -5872,10 +5885,10 @@ snapshots:
     transitivePeerDependencies:
       - '@agoralabs-sh/avm-web-provider'
 
-  '@txnlab/use-wallet@4.0.0(algosdk@3.5.2)(lute-connect@1.4.1)':
+  '@txnlab/use-wallet@4.0.0(algosdk@3.7.0)(lute-connect@1.4.1)':
     dependencies:
       '@tanstack/store': 0.7.0
-      algosdk: 3.5.2
+      algosdk: 3.7.0
     optionalDependencies:
       lute-connect: 1.4.1
 
@@ -5959,10 +5972,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/eslint-plugin@8.25.0(@typescript-eslint/parser@8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3))(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)':
+  '@typescript-eslint/eslint-plugin@8.25.0(@typescript-eslint/parser@8.25.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3))(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.1
-      '@typescript-eslint/parser': 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
+      '@typescript-eslint/parser': 8.25.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3)
       '@typescript-eslint/scope-manager': 8.25.0
       '@typescript-eslint/type-utils': 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
       '@typescript-eslint/utils': 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
@@ -6059,7 +6072,7 @@ snapshots:
 
   '@typescript-eslint/utils@8.25.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.1(eslint@9.21.0(jiti@2.4.2))
+      '@eslint-community/eslint-utils': 4.9.0(eslint@9.21.0(jiti@2.4.2))
       '@typescript-eslint/scope-manager': 8.25.0
       '@typescript-eslint/types': 8.25.0
       '@typescript-eslint/typescript-estree': 8.25.0(typescript@5.7.3)
@@ -6070,7 +6083,7 @@ snapshots:
 
   '@typescript-eslint/utils@8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.1(eslint@9.39.0(jiti@2.4.2))
+      '@eslint-community/eslint-utils': 4.9.0(eslint@9.39.0(jiti@2.4.2))
       '@typescript-eslint/scope-manager': 8.25.0
       '@typescript-eslint/types': 8.25.0
       '@typescript-eslint/typescript-estree': 8.25.0(typescript@5.9.3)
@@ -6296,6 +6309,17 @@ snapshots:
   algorand-msgpack@1.1.0: {}
 
   algosdk@3.5.2:
+    dependencies:
+      algorand-msgpack: 1.1.0
+      hi-base32: 0.5.1
+      js-sha256: 0.9.0
+      js-sha3: 0.8.0
+      js-sha512: 0.8.0
+      json-bigint: 1.0.0
+      tweetnacl: 1.0.3
+      vlq: 2.0.4
+
+  algosdk@3.7.0:
     dependencies:
       algorand-msgpack: 1.1.0
       hi-base32: 0.5.1
@@ -7126,14 +7150,14 @@ snapshots:
 
   eslint-plugin-es-x@7.8.0(eslint@9.21.0(jiti@2.4.2)):
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.1(eslint@9.21.0(jiti@2.4.2))
+      '@eslint-community/eslint-utils': 4.9.0(eslint@9.21.0(jiti@2.4.2))
       '@eslint-community/regexpp': 4.12.1
       eslint: 9.21.0(jiti@2.4.2)
       eslint-compat-utils: 0.5.1(eslint@9.21.0(jiti@2.4.2))
 
   eslint-plugin-es-x@7.8.0(eslint@9.39.0(jiti@2.4.2)):
     dependencies:
-      '@eslint-community/eslint-utils': 4.4.1(eslint@9.39.0(jiti@2.4.2))
+      '@eslint-community/eslint-utils': 4.9.0(eslint@9.39.0(jiti@2.4.2))
       '@eslint-community/regexpp': 4.12.1
       eslint: 9.39.0(jiti@2.4.2)
       eslint-compat-utils: 0.5.1(eslint@9.39.0(jiti@2.4.2))
@@ -9503,7 +9527,7 @@ snapshots:
 
   typescript-eslint@8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.25.0(@typescript-eslint/parser@8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3))(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
+      '@typescript-eslint/eslint-plugin': 8.25.0(@typescript-eslint/parser@8.25.0(eslint@9.21.0(jiti@2.4.2))(typescript@5.7.3))(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
       '@typescript-eslint/parser': 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
       '@typescript-eslint/utils': 8.25.0(eslint@9.39.0(jiti@2.4.2))(typescript@5.9.3)
       eslint: 9.39.0(jiti@2.4.2)

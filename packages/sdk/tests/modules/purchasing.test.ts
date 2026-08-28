@@ -90,6 +90,9 @@ const mockInstanceClient: MockInstanceClient = {
     purchase: vi.fn().mockReturnValue({
       send: vi.fn().mockResolvedValue({}),
     }),
+    postOffer: vi.fn().mockReturnValue({
+      send: vi.fn().mockResolvedValue({}),
+    }),
   }),
 }
 
@@ -145,22 +148,44 @@ describe('PurchasingModule', () => {
     client.setSigner(BUYER_ADDRESS, mockSigner.signer)
     purchasing = new PurchasingModule(client)
 
-    // Mock client methods
+    // Mock client methods. App IDs may arrive as a number or a bigint, so
+    // match on the numeric value rather than the exact type.
     vi.spyOn(client, 'resolve').mockImplementation(async (nameOrAppId) => {
-      if (nameOrAppId === 'reserved.algo' || nameOrAppId === 123) {
+      const key =
+        typeof nameOrAppId === 'string' ? nameOrAppId : Number(nameOrAppId)
+
+      if (key === 'reserved.algo' || key === 123) {
         return mockReservedNfd
       }
-      if (nameOrAppId === 'forsale.algo' || nameOrAppId === 456) {
+      if (key === 'forsale.algo' || key === 456) {
         return mockForSaleNfd
       }
-      if (nameOrAppId === 'forsale-reserved.algo' || nameOrAppId === 789) {
+      if (key === 'forsale-reserved.algo' || key === 789) {
         return mockForSaleReservedNfd
       }
-      if (nameOrAppId === 'owned.algo' || nameOrAppId === 321) {
+      if (key === 'owned.algo' || key === 321) {
         return mockOwnedNfd
       }
       throw new Error('NFD not found')
     })
+
+    // Name → app ID, which is a single registry box read in production
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.spyOn(purchasing as any, 'parseAppId').mockImplementation(
+      async (nameOrAppId: unknown) => {
+        const appIds: Record<string, bigint> = {
+          'reserved.algo': 123n,
+          'forsale.algo': 456n,
+          'forsale-reserved.algo': 789n,
+          'owned.algo': 321n,
+        }
+        const appId = appIds[String(nameOrAppId)]
+        if (appId === undefined) {
+          throw new Error(`NFD not found: ${String(nameOrAppId)}`)
+        }
+        return appId
+      },
+    )
 
     // Mock getInstanceClient method
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -431,6 +456,82 @@ describe('PurchasingModule', () => {
     it('should return false on error', async () => {
       const result = await purchasing.canBuy('nonexistent.algo', BUYER_ADDRESS)
       expect(result).toBe(false)
+    })
+  })
+
+  describe('makeOffer', () => {
+    it('should successfully make an offer on an NFD', async () => {
+      const result = await purchasing.makeOffer(
+        'forsale.algo',
+        5000000n,
+        'I want this NFD',
+      )
+
+      expect(mockInstanceClient.newGroup).toHaveBeenCalled()
+      expect(mockInstanceClient.newGroup().postOffer).toHaveBeenCalledWith({
+        args: {
+          offer: 5000000n,
+          note: 'I want this NFD',
+        },
+        staticFee: expect.objectContaining({
+          amountInMicroAlgo: 3000n,
+        }),
+      })
+      expect(
+        mockInstanceClient.newGroup().postOffer().send,
+      ).toHaveBeenCalledWith({
+        populateAppCallResources: true,
+      })
+
+      // Posting the offer only needs the app ID, so the NFD is resolved once —
+      // afterwards, to return the updated record
+      expect(client.resolve).toHaveBeenCalledTimes(1)
+      expect(client.resolve).toHaveBeenCalledWith(456n, { view: 'full' })
+      expect(result).toEqual(mockForSaleNfd)
+    })
+
+    it('should accept numeric amount', async () => {
+      await purchasing.makeOffer('forsale.algo', 5000000)
+
+      expect(mockInstanceClient.newGroup().postOffer).toHaveBeenCalledWith({
+        args: {
+          offer: 5000000n,
+          note: '',
+        },
+        staticFee: expect.objectContaining({
+          amountInMicroAlgo: 3000n,
+        }),
+      })
+    })
+
+    it('should reject a fractional amount', async () => {
+      await expect(purchasing.makeOffer('forsale.algo', 1.5)).rejects.toThrow(
+        'Offer amount must be a whole number, got 1.5',
+      )
+    })
+
+    it('should reject a negative amount', async () => {
+      await expect(purchasing.makeOffer('forsale.algo', -1)).rejects.toThrow(
+        'Offer amount must not be negative, got -1',
+      )
+    })
+
+    it('should throw if the NFD cannot be found', async () => {
+      await expect(
+        purchasing.makeOffer('noapp.algo', 5000000n),
+      ).rejects.toThrow('NFD not found: noapp.algo')
+    })
+
+    it('should wrap transaction errors', async () => {
+      mockInstanceClient.newGroup.mockReturnValueOnce({
+        postOffer: vi.fn().mockReturnValue({
+          send: vi.fn().mockRejectedValue(new Error('txn failed')),
+        }),
+      })
+
+      await expect(
+        purchasing.makeOffer('forsale.algo', 5000000n),
+      ).rejects.toThrow('Failed to make offer: txn failed')
     })
   })
 

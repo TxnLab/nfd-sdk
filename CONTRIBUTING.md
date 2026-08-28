@@ -2,7 +2,7 @@
 
 Thank you for considering contributing to `@txnlab/nfd-sdk`!
 
-> **Note:** This SDK is in early development (pre-v1.0.0) and there are many features that are planned and soon to be added. In some cases, a feature you're considering proposing may already be in the works. Feel free to open an issue to discuss before investing significant time in implementation.
+> **Note:** The SDK is under active development and there are features already planned or in progress. A feature you're considering proposing may already be in the works, so feel free to open an issue to discuss before investing significant time in implementation.
 
 ## Reporting Issues
 
@@ -33,23 +33,22 @@ If you want to contribute to `@txnlab/nfd-sdk`, please follow these steps to get
 
 - Fork the repository.
 - Clone the repository.
-- Create a new branch from `main` using the following naming convention:
+- Create a new branch from `main`, named `<type>/<short-description>` using the same type as the commit will carry — `feat/vault-transfers`, `fix/reserved-for-address`, `ci/bump-actions`, `docs/publishing-flow`.
 
-  - For features: `feature/my-awesome-feature`
-  - For bug fixes: `fix/my-bug-fix`
+- Match your Node and pnpm versions to the repository.
+
+  - We use [nvm](https://github.com/nvm-sh/nvm) to manage node versions. Use the version in `.nvmrc`:
+
+    ```bash
+    nvm use
+    ```
+
+  - pnpm is pinned by the root `packageManager` field, and Corepack will select it for you. If you are not familiar with pnpm, see the [pnpm documentation](https://pnpm.io/cli/install).
 
 - Install dependencies.
 
   ```bash
   pnpm install
-  ```
-
-  - We use pnpm v9 as our package manager. If you are not familiar with pnpm, please refer to the [pnpm documentation](https://pnpm.io/cli/install).
-
-  - We use [nvm](https://github.com/nvm-sh/nvm) to manage node versions. Please make sure to use the version mentioned in the `.nvmrc` file.
-
-  ```bash
-  nvm use
   ```
 
 - Build the SDK.
@@ -64,6 +63,33 @@ If you want to contribute to `@txnlab/nfd-sdk`, please follow these steps to get
 
 - Submit PR for review (see PR guidelines below).
 
+### Generated code
+
+Two sets of files under `packages/sdk/src/` are generated and must not be hand-edited — a regeneration will silently discard your changes:
+
+- `src/api/*.gen.ts` — the OpenAPI client, generated from `src/api/openapi3.yaml`
+- `src/contracts/NFD*Client.ts` — the Algorand contract clients, generated from the ARC-56 specs in `src/contracts/minimal/`
+
+Regenerate both with `pnpm --filter @txnlab/nfd-sdk generate`. Edit the source of truth (the OpenAPI document or the ARC-56 spec) instead.
+
+### Running tests
+
+```bash
+pnpm test                                        # run once, from the root
+pnpm --filter @txnlab/nfd-sdk test:watch         # watch mode
+pnpm --filter @txnlab/nfd-sdk test:coverage      # with v8 coverage
+```
+
+A single file:
+
+```bash
+pnpm --filter @txnlab/nfd-sdk exec vitest run tests/utils/nfd.test.ts
+```
+
+Only `test` exists at the root; the watch and coverage scripts live in the SDK package, hence the `--filter`.
+
+Note that the module tests mock the typed contract client and the transaction composer wholesale. They verify the SDK's own logic — which guard fires, which arguments and fees a call is given, what order transactions are added in — and prove nothing about whether a node would accept the resulting group. When a change is driven by a contract `assert`, quote that assert in the test comment.
+
 ### Running Examples
 
 - Make sure you have installed dependencies in the repository's root directory.
@@ -72,17 +98,21 @@ If you want to contribute to `@txnlab/nfd-sdk`, please follow these steps to get
   pnpm install
   ```
 
-- If you want to run an example against your local changes, navigate to the project in the `examples/` directory and run the following command:
+- If you want to run an example against your local changes, build the SDK first (`pnpm build` from the root), then navigate to the project in the `examples/` directory and run the following command:
 
   ```bash
   pnpm dev
   ```
 
+  The `lookup` example is a plain Node script rather than a Vite app; run it with `pnpm start`.
+
 ## Git Commit Guidelines
 
-`TxnLab/nfd-sdk` is using [Angular Commit Message Conventions](https://github.com/angular/angular.js/blob/master/DEVELOPERS.md#-git-commit-guidelines).
+`TxnLab/nfd-sdk` is using [Angular Commit Message Conventions](https://github.com/angular/angular/blob/main/contributing-docs/commit-message-guidelines.md).
 
 We have very precise rules over how our git commit messages can be formatted. This leads to **more readable messages** that are easy to follow when looking through the **project history**.
+
+These rules are not only cosmetic. Releases are automated by semantic-release, so the commit type determines the version bump and the commit subject and body become the published release notes. See [PUBLISHING.md](./PUBLISHING.md) for the full picture.
 
 ### Commit Message Format
 
@@ -102,16 +132,22 @@ Any line of the commit message cannot be longer than 100 characters! This allows
 
 ### Type
 
-Must be one of the following:
+Must be one of the following. The right-hand column is the version bump the type produces:
 
-- **feat**: A new feature
-- **fix**: A bug fix
-- **docs**: Documentation only changes
-- **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
-- **refactor**: A code change that neither fixes a bug nor adds a feature
-- **perf**: A code change that improves performance
-- **test**: Adding missing or correcting existing tests
-- **chore**: Changes to the build process or auxiliary tools and libraries such as documentation generation
+| Type         | Meaning                                                                           | Bump  |
+| ------------ | --------------------------------------------------------------------------------- | ----- |
+| **feat**     | A new feature                                                                     | minor |
+| **fix**      | A bug fix                                                                         | patch |
+| **perf**     | A code change that improves performance                                           | patch |
+| **refactor** | A code change that neither fixes a bug nor adds a feature                         | patch |
+| **docs**     | Documentation only changes                                                        | none  |
+| **style**    | Changes that do not affect the meaning of the code (white-space, formatting, etc) | none  |
+| **test**     | Adding missing or correcting existing tests                                       | none  |
+| **build**    | Changes to the build system or dependencies                                       | none  |
+| **ci**       | Changes to the CI or release workflows                                            | none  |
+| **chore**    | Other changes to auxiliary tools and libraries                                    | none  |
+
+Only `feat`, `fix`, `perf` and `refactor` appear in the release notes. The rest are still part of the history; they just do not produce a release on their own.
 
 ### Scope
 
@@ -135,7 +171,15 @@ Just as in the **subject**, use the imperative, present tense: "change" not "cha
 
 The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues that this commit closes.
 
-**Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines. The rest of the commit message is then used for this.
+**Breaking Changes** must start with the words `BREAKING CHANGE:` followed by a space or two newlines. The rest of the commit message is then used for this.
+
+The `!` shorthand (`feat(core)!: …`) does **not** work on its own here, and it is worse than doing nothing. The Angular preset's header pattern does not allow the `!`, so such a header fails to parse as a `feat` at all — without the footer, the commit produces no version bump and never reaches the release notes. Write the footer; keep the `!` only as a marker for human readers:
+
+```
+feat(core)!: read NFD boxes in a single algod request
+
+BREAKING CHANGE: algosdk must now be v3.6.0 or later.
+```
 
 ### Revert
 
@@ -143,29 +187,21 @@ If the commit reverts a previous commit, it should begin with `revert: `, follow
 
 ## Pull Requests
 
-- Pull requests will not be reviewed until all checks pass. Before submitting a pull request, ensure that you have run the following commands in the repository's root directory:
+- Pull requests will not be reviewed until all checks pass. Before submitting a pull request, run the whole CI sequence from the repository's root directory:
 
   ```bash
-  pnpm lint
+  pnpm run ci
   ```
 
-  ```bash
-  pnpm format
-  ```
-
-  ```bash
-  pnpm typecheck
-  ```
-
-  ```bash
-  pnpm test
-  ```
+  That is `lint`, `format:check`, `typecheck`, `test`, `build` and `build:examples`, in the order CI runs them. Run `pnpm format` first if `format:check` fails — both operate on the whole repository from the root.
 
 - If possible/appropriate, create new tests that fail without your changes and pass with them.
 
-- Pull requests are merged by squashing all commits and editing the commit message if necessary using the GitHub user interface.
+- **The pull request title must be a valid commit header.** Pull requests are normally squash-merged, and the squash title defaults to the PR title, which becomes the commit header semantic-release parses. A PR titled `Add vault helpers` releases nothing; `feat(core): add vault helpers` releases a minor.
 
-- Use an appropriate commit type. Be especially careful with breaking changes.
+- Use an appropriate commit type, and be especially careful with breaking changes — see the footer rules above.
+
+- If a pull request contains several commits that each deserve their own release-note entry, say so in the description and ask for a merge commit instead of a squash.
 
 ## Documentation
 

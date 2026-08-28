@@ -62,9 +62,26 @@ function makeInstanceStub() {
   return {
     appAddress: getApplicationAddress(NFD_APP_ID),
     getGlobalState: vi.fn().mockResolvedValue(makeGlobalState()),
-    getBoxNames: vi.fn().mockResolvedValue([]),
-    getBoxValue: vi.fn(),
   }
+}
+
+/**
+ * Fake algod. Boxes are read in one `include=values` request, so the fake
+ * returns names and values together.
+ */
+function makeAlgodStub(
+  boxes: Array<{ name: Uint8Array; value: Uint8Array }> = [],
+) {
+  const getApplicationBoxes = vi.fn(() => {
+    const request = {
+      include: vi.fn(() => request),
+      next: vi.fn(() => request),
+      round: vi.fn(() => request),
+      do: vi.fn().mockResolvedValue({ boxes, round: 1000 }),
+    }
+    return request
+  })
+  return { getApplicationBoxes }
 }
 
 interface MockSetup {
@@ -82,7 +99,7 @@ function setup(registryId: number | bigint = NfdRegistryId.MAINNET): MockSetup {
   )
 
   const mockAlgorand = {
-    client: { getAppClientById },
+    client: { getAppClientById, algod: makeAlgodStub() },
   } as unknown as AlgorandClient
 
   const resolver = new NfdResolver({ algorand: mockAlgorand, registryId })

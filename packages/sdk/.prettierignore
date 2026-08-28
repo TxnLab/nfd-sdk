@@ -1,1 +1,10 @@
 CHANGELOG.md
+
+# Generated files. Prettier resolves the ignore file next to its working
+# directory, so `pnpm format` (which runs in this package) never sees the root
+# .prettierignore — without these it rewrites the generated contract clients
+# that `pnpm format:check` correctly skips.
+src/api/openapi3.yaml
+src/api/*.gen.ts
+src/contracts/**/*.arc56.json
+src/contracts/*Client.ts

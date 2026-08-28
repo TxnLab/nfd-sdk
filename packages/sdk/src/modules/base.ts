@@ -5,13 +5,18 @@ import { Address } from 'algosdk'
 import { DefaultSender, NfdRegistryId } from '../constants'
 import { NfdInstanceClient } from '../contracts/NFDInstanceClient'
 import { NfdRegistryClient } from '../contracts/NFDRegistryClient'
+import { getAllBoxes } from '../utils/internal/boxes'
 import {
   decodeAppIdFromNameBox,
   getNameBoxName,
 } from '../utils/internal/registry-box'
+import { isValidName } from '../utils/nfd'
 
 import type { NfdClient } from '../client'
 import type { Constraints } from '../contracts/NFDRegistryClient'
+import type { AppBox } from '../utils/internal/boxes'
+
+export type { AppBox } from '../utils/internal/boxes'
 
 /**
  * Base module class that all other modules will extend
@@ -95,6 +100,23 @@ export abstract class BaseModule {
   }
 
   /**
+   * Get every box for an application, with values included
+   *
+   * Uses the `include=values` query parameter so that names and values arrive
+   * together, which takes one request per page rather than one request per box.
+   * Pages after the first are pinned to the round the first page was read at, so
+   * a multi-page read is consistent.
+   *
+   * @param appId - The application ID to read boxes from
+   * @returns Every box for the application
+   * @throws If the node returns boxes without values, or does not advance the
+   * pagination cursor
+   */
+  protected getAllBoxes(appId: bigint): Promise<AppBox[]> {
+    return getAllBoxes(this.algorand.client.algod, appId)
+  }
+
+  /**
    * Get an NFD's application ID from its name
    * @param name - The NFD name
    * @returns The NFD's application ID or null if not found
@@ -117,6 +139,47 @@ export abstract class BaseModule {
       // Re-throw other errors
       throw error
     }
+  }
+
+  /**
+   * Parse a name or app ID input into a bigint app ID
+   *
+   * Resolving a name costs one registry box read; a numeric input costs
+   * nothing. Callers that only need the app ID should use this rather than a
+   * full `resolve()`, which additionally reads global state and every box.
+   *
+   * @param nameOrAppId - The NFD name or application ID to parse
+   * @returns The NFD's application ID as a bigint
+   * @throws If the input is an invalid NFD name or the NFD does not exist
+   */
+  protected async parseAppId(
+    nameOrAppId: string | number | bigint,
+  ): Promise<bigint> {
+    // If it's already a number or bigint, just return it
+    if (typeof nameOrAppId !== 'string') {
+      return BigInt(nameOrAppId)
+    }
+
+    // A wholly numeric string is an app ID. The test has to be the whole
+    // string: NFD names may be all digits, and `parseInt('123.algo')` reads
+    // that as app ID 123 — a valid app that is never the NFD asked for.
+    if (/^\d+$/.test(nameOrAppId)) {
+      return BigInt(nameOrAppId)
+    }
+
+    // Validate and lookup NFD name
+    if (!isValidName(nameOrAppId)) {
+      throw new Error(
+        `Invalid NFD name: ${nameOrAppId}. Name must be in the format 'name.algo' or 'segment.name.algo'`,
+      )
+    }
+
+    const appId = await this.getAppIdFromName(nameOrAppId)
+    if (appId === null) {
+      throw new Error(`NFD not found: ${nameOrAppId}`)
+    }
+
+    return appId
   }
 
   /**

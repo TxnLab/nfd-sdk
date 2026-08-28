@@ -1,14 +1,12 @@
 import { Address } from 'algosdk'
 
-import { isZeroBytes } from './bytes'
+import { concatUint8Arrays, isZeroBytes } from './bytes'
 import { determineNfdState, generateMetaTags } from './nfd'
 import { parseAddress, parseString, parseUint64 } from './state'
 
+import type { AppBox } from './boxes'
 import type { Nfd } from '../../types'
-import type {
-  AppState,
-  BoxName,
-} from '@algorandfoundation/algokit-utils/types/app'
+import type { AppState } from '@algorandfoundation/algokit-utils/types/app'
 
 /** The view types supported when reading an NFD's box properties */
 export type NfdView = 'tiny' | 'brief' | 'full'
@@ -23,11 +21,9 @@ export interface BuildNfdRecordParams {
   appAddress: string
   /** The instance's global state */
   globalState: AppState
-  /** The instance's box names */
-  boxes: BoxName[]
-  /** Reads a box value by its raw name */
-  getBoxValue: (nameRaw: Uint8Array) => Promise<Uint8Array>
-  /** The view type controlling which boxes are read */
+  /** The instance's boxes, names and values together */
+  boxes: AppBox[]
+  /** The view type controlling which boxes are parsed */
   view?: NfdView
 }
 
@@ -37,14 +33,13 @@ export interface BuildNfdRecordParams {
  * `NfdClient` and the slim `NfdResolver` lookup entry, so the two produce
  * identical records.
  */
-export async function buildNfdRecord({
+export function buildNfdRecord({
   appId,
   appAddress,
   globalState,
   boxes,
-  getBoxValue,
   view = 'brief',
-}: BuildNfdRecordParams): Promise<Nfd> {
+}: BuildNfdRecordParams): Nfd {
   // Filter boxes based on view type
   const filteredBoxes = boxes.filter((box) => {
     const boxName = box.name
@@ -77,8 +72,8 @@ export async function buildNfdRecord({
   const caAlgo: string[] = []
   const unverifiedCaAlgo: string[] = []
 
-  // Group box names by their base field name to handle split fields
-  const boxGroups: Record<string, string[]> = {}
+  // Group box values by their base field name to handle split fields
+  const boxGroups: Record<string, Array<Uint8Array | undefined>> = {}
 
   for (const box of filteredBoxes) {
     const boxName = box.name
@@ -94,38 +89,21 @@ export async function buildNfdRecord({
         if (!boxGroups[baseName]) {
           boxGroups[baseName] = []
         }
-        // Store the box name at the correct index
-        boxGroups[baseName][index] = boxName
+        // Store the box value at the correct index
+        boxGroups[baseName][index] = box.value
       } else {
         // Regular field (not split), add it as a single-item array
-        boxGroups[boxName] = [boxName]
+        boxGroups[boxName] = [box.value]
       }
     }
   }
 
   // Process each group of boxes
-  for (const [baseFieldName, boxNames] of Object.entries(boxGroups)) {
-    // Sort the box names to ensure correct order (important for split fields)
-    boxNames.sort()
-
-    let value = new Uint8Array(0)
-
-    // Fetch and combine values from all boxes in this group
-    for (const boxName of boxNames) {
-      if (!boxName) continue // Skip undefined entries
-
-      const box = filteredBoxes.find((b) => b.name === boxName)
-      if (!box) continue
-
-      const boxValue = await getBoxValue(box.nameRaw)
-      if (!boxValue) continue
-
-      // Concatenate the value
-      const newCombined = new Uint8Array(value.length + boxValue.length)
-      newCombined.set(value)
-      newCombined.set(boxValue, value.length)
-      value = newCombined
-    }
+  for (const [baseFieldName, chunks] of Object.entries(boxGroups)) {
+    // Combine the chunks in index order, skipping any gaps
+    const value = concatUint8Arrays(
+      ...chunks.filter((chunk): chunk is Uint8Array => chunk !== undefined),
+    )
 
     if (value.length === 0) continue
 

@@ -13,15 +13,19 @@ import {
   NfdMintQuote,
   NfdMintQuoteParams,
 } from './modules/minting'
-import { PurchasingModule, NfdPurchaseQuote } from './modules/purchasing'
+import { NfdPurchaseQuote, PurchasingModule } from './modules/purchasing'
 
 import type {
   Nfd,
   NfdImageResult,
   ResolveOptions,
+  ReverseLookupOptions,
   SearchOptions,
   SearchResponse,
-  ReverseLookupOptions,
+  SuggestOptions,
+  VerifyConfirmResult,
+  VerifyField,
+  VerifyRequestResult,
 } from './types'
 
 /**
@@ -397,5 +401,78 @@ export class NfdClient {
     } else {
       return this._metadata.getBannerImage(input)
     }
+  }
+
+  /**
+   * Get name suggestions for NFD registration
+   * @param name - The name (even partial) to search for
+   * @param options - Suggestion options including the buyer address
+   * @returns Array of suggested NFD records
+   */
+  public async suggest(name: string, options: SuggestOptions): Promise<Nfd[]> {
+    return this.api.suggest(name, options)
+  }
+
+  /**
+   * Make an offer to purchase an NFD from its owner
+   * @param nameOrAppId - The NFD name or application ID to make an offer on
+   * @param amount - The offer amount in microAlgos
+   * @param note - Optional note to the owner
+   * @returns The NFD record
+   * @throws If the offer fails or signer is not set
+   */
+  public async makeOffer(
+    nameOrAppId: string | number | bigint,
+    amount: bigint | number,
+    note: string = '',
+  ): Promise<Nfd> {
+    if (!this._signer) {
+      throw new Error('Signer must be set before making an offer')
+    }
+
+    try {
+      return await this._purchasing.makeOffer(nameOrAppId, amount, note)
+    } finally {
+      this._signer = null
+    }
+  }
+
+  /**
+   * Start a verification request for an NFD property
+   * @param name - The NFD name to verify a property for
+   * @param field - The field to verify
+   * @returns Verification request result with challenge and ID
+   * @throws If the verification request fails or signer is not set
+   */
+  public async verifyRequest(
+    name: string,
+    field: VerifyField,
+  ): Promise<VerifyRequestResult> {
+    if (!this._signer) {
+      throw new Error('Signer must be set before requesting verification')
+    }
+
+    try {
+      return await this.api.verifyRequest(
+        name,
+        this._signer.addr.toString(),
+        field,
+      )
+    } finally {
+      this._signer = null
+    }
+  }
+
+  /**
+   * Confirm a verification request
+   * @param id - The verification request ID
+   * @param challenge - The challenge value (optional depending on verification type)
+   * @returns Verification confirmation result
+   */
+  public async verifyConfirm(
+    id: string,
+    challenge?: string,
+  ): Promise<VerifyConfirmResult> {
+    return this.api.verifyConfirm(id, challenge)
   }
 }

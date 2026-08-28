@@ -34,7 +34,12 @@ vi.mock('@algorandfoundation/algokit-utils', () => ({
 
 vi.mock('../src/api-client', () => ({
   NfdApiClient: vi.fn().mockImplementation(() => ({
-    // Mock API client methods as needed
+    suggest: vi.fn().mockResolvedValue([{ name: 'suggestion.algo' }]),
+    verifyRequest: vi.fn().mockResolvedValue({
+      challenge: 'test-challenge',
+      id: 'test-id',
+    }),
+    verifyConfirm: vi.fn().mockResolvedValue({ confirmed: true }),
   })),
 }))
 
@@ -75,6 +80,12 @@ vi.mock('../src/modules/purchasing', () => ({
       name: 'test.algo',
       appID: 12345,
       state: 'owned' as const,
+      owner: VALID_ADDRESS,
+    }),
+    makeOffer: vi.fn().mockResolvedValue({
+      name: 'test.algo',
+      appID: 12345,
+      state: 'forSale' as const,
       owner: VALID_ADDRESS,
     }),
   })),
@@ -233,6 +244,91 @@ describe('NfdClient', () => {
       await expect(clientWithoutSigner.buy('test.algo')).rejects.toThrow(
         'Signer must be set before buying NFD',
       )
+    })
+
+    it('should delegate makeOffer to purchasing module and reset signer', async () => {
+      const result = await client.makeOffer('test.algo', 5000000n)
+
+      expect(result).toEqual({
+        name: 'test.algo',
+        appID: 12345,
+        state: 'forSale',
+        owner: VALID_ADDRESS,
+      })
+      expect(client.signer).toBeNull()
+    })
+
+    it('should reset signer even when makeOffer fails', async () => {
+      // Get the mock purchasing module and make makeOffer throw
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const purchasing = (client as any)._purchasing
+      purchasing.makeOffer.mockRejectedValueOnce(new Error('Offer failed'))
+
+      await expect(client.makeOffer('test.algo', 5000000n)).rejects.toThrow(
+        'Offer failed',
+      )
+      expect(client.signer).toBeNull()
+    })
+
+    it('should throw error if signer not set for makeOffer', async () => {
+      const clientWithoutSigner = NfdClient.testNet()
+
+      await expect(
+        clientWithoutSigner.makeOffer('test.algo', 5000000n),
+      ).rejects.toThrow('Signer must be set before making an offer')
+    })
+  })
+
+  describe('suggest', () => {
+    it('should delegate suggest to api client', async () => {
+      const result = await client.suggest('test', { buyer: VALID_ADDRESS })
+      expect(result).toEqual([{ name: 'suggestion.algo' }])
+    })
+  })
+
+  describe('Verification methods', () => {
+    it('should delegate verifyRequest to api and reset signer', async () => {
+      client.setSigner(VALID_ADDRESS, mockSigner)
+
+      const result = await client.verifyRequest('test.algo', 'twitter')
+
+      expect(result).toEqual({
+        challenge: 'test-challenge',
+        id: 'test-id',
+      })
+      expect(client.signer).toBeNull()
+    })
+
+    it('should reset signer even when verifyRequest fails', async () => {
+      client.setSigner(VALID_ADDRESS, mockSigner)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const api = (client as any)._api
+      api.verifyRequest.mockRejectedValueOnce(new Error('Verify failed'))
+
+      await expect(
+        client.verifyRequest('test.algo', 'twitter'),
+      ).rejects.toThrow('Verify failed')
+      expect(client.signer).toBeNull()
+    })
+
+    it('should throw error if signer not set for verifyRequest', async () => {
+      const clientWithoutSigner = NfdClient.testNet()
+
+      await expect(
+        clientWithoutSigner.verifyRequest('test.algo', 'twitter'),
+      ).rejects.toThrow('Signer must be set before requesting verification')
+    })
+
+    it('should delegate verifyConfirm to api without requiring signer', async () => {
+      const clientWithoutSigner = NfdClient.testNet()
+
+      const result = await clientWithoutSigner.verifyConfirm(
+        'test-id',
+        'challenge-value',
+      )
+
+      expect(result).toEqual({ confirmed: true })
     })
   })
 })

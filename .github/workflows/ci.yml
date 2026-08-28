@@ -53,6 +53,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Format Check
+        run: pnpm format:check
+
       - name: Type Check
         run: pnpm typecheck
 
