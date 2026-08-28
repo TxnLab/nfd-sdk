@@ -4,7 +4,11 @@ CHANGELOG.md
 # directory, so `pnpm format` (which runs in this package) never sees the root
 # .prettierignore — without these it rewrites the generated contract clients
 # that `pnpm format:check` correctly skips.
-src/api/openapi3.yaml
-src/api/*.gen.ts
+openapi3.yaml
 src/contracts/**/*.arc56.json
 src/contracts/*Client.ts
+
+# src/api/**.gen.ts is deliberately NOT listed. openapi-ts formats its own
+# output by running prettier from this directory, so an ignore entry here
+# silences that step and the client lands unformatted. The root
+# .prettierignore still excludes it from `pnpm format:check`.

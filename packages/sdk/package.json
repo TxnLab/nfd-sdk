@@ -77,8 +77,7 @@
     "generate": "pnpm fetch:specs && pnpm generate:clients && pnpm generate:openapi"
   },
   "dependencies": {
-    "@algorandfoundation/algokit-utils": "^8.2.2",
-    "@hey-api/client-fetch": "^0.8.4"
+    "@algorandfoundation/algokit-utils": "^8.2.2"
   },
   "peerDependencies": {
     "algosdk": "^3.6.0"

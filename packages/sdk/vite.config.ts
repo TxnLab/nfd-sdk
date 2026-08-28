@@ -16,11 +16,7 @@ export default defineConfig({
     },
     outDir: 'dist',
     rollupOptions: {
-      external: [
-        'algosdk',
-        '@algorandfoundation/algokit-utils',
-        '@hey-api/client-fetch',
-      ],
+      external: ['algosdk', '@algorandfoundation/algokit-utils'],
       output: [
         {
           format: 'es',

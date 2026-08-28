@@ -4,9 +4,14 @@ import baseConfig from '../../eslint.config.js'
 export default tseslint.config(
   ...baseConfig,
   {
+    // Generated OpenAPI client. openapi-ts >= 0.7x emits its own fetch runtime
+    // into src/api/client and src/api/core, so the old src/api/*.gen.ts glob no
+    // longer covers the output.
+    ignores: ['src/api/**'],
+  },
+  {
     // Source files
     files: ['src/**/*.ts'],
-    ignores: ['src/api/*.gen.ts'],
     languageOptions: {
       parserOptions: {
         project: './tsconfig.json',
