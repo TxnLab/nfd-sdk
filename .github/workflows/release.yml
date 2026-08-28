@@ -41,8 +41,11 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: 'pnpm'
 
-      - name: Update npm to latest
-        run: npm install -g npm@latest
+      # Node 22 bundles npm 10.9.x, which predates OIDC trusted publishing, so
+      # this step is required. Pin the major: npm@latest broke the release once
+      # by raising its own Node floor past .nvmrc (npm 12 wants >= 22.22.2).
+      - name: Update npm for trusted publishing
+        run: npm install -g npm@^11.5.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

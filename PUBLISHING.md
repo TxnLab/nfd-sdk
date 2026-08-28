@@ -97,3 +97,5 @@ Overriding `--plugins` restricts the run to analysis and note rendering, which i
 **`npm ERR! 404` or an auth error during publish.** The trusted publisher configuration on npmjs.com no longer matches the workflow — check the repository, workflow filename and environment recorded there against `release.yml`.
 
 **A `node version ... is required` error.** semantic-release supports a narrow Node range; the workflow pins it from `.nvmrc`. Locally, run `nvm use` first.
+
+**`EBADENGINE` in the "Update npm for trusted publishing" step.** The pinned npm major has outgrown the Node version in `.nvmrc`. Node's bundled npm is too old for trusted publishing, so the step cannot simply be dropped — raise `.nvmrc` to a Node release the pinned npm supports. This is why the step pins a major rather than tracking `npm@latest`: releases should not break because npm shipped a new floor.
