@@ -21,13 +21,19 @@ All commands run from the repo root unless noted.
 pnpm install              # Install dependencies
 pnpm build                # Build the SDK (Vite → dist/esm + dist/cjs)
 pnpm test                 # Run tests once (Vitest)
-pnpm test:watch           # Run tests in watch mode
-pnpm test:coverage        # Run tests with v8 coverage
 pnpm lint                 # ESLint across all packages
 pnpm format               # Prettier --write across all packages
 pnpm format:check         # Prettier --check from the root (what CI runs)
 pnpm typecheck            # TypeScript type checking (SDK only)
 pnpm build:examples       # Build all example apps
+pnpm run ci               # The full PR sequence, in CI's order
+```
+
+Watch and coverage runs exist only in the SDK package, not at the root:
+
+```bash
+pnpm --filter @txnlab/nfd-sdk test:watch
+pnpm --filter @txnlab/nfd-sdk test:coverage
 ```
 
 Run a single test file:
