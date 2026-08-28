@@ -1,11 +1,11 @@
 import { client } from './api/client.gen'
 import {
-  nfdGetLookup,
-  nfdGetNfd,
-  nfdSearchV2,
-  nfdSuggest,
-  nfdVerifyConfirm,
-  nfdVerifyRequest,
+  nfd_getLookup,
+  nfd_getNfd,
+  nfd_searchV2,
+  nfd_suggest,
+  nfd_verifyConfirm,
+  nfd_verifyRequest,
 } from './api/sdk.gen'
 import { NfdApiBaseUrl, NfdRegistryId } from './constants'
 import { chunkArray } from './utils/internal/array'
@@ -93,7 +93,7 @@ export class NfdApiClient {
     // Add cache parameter if needed
     const params = this._getCacheParam(options.nocache)
 
-    const response = await nfdGetNfd({
+    const response = await nfd_getNfd({
       client: this._client,
       query: {
         view: options.view,
@@ -138,7 +138,7 @@ export class NfdApiClient {
       // Make parallel requests for each chunk
       const responses = await Promise.all(
         addressChunks.map((chunk) =>
-          nfdGetLookup({
+          nfd_getLookup({
             client: this._client,
             query: {
               address: chunk,
@@ -184,7 +184,7 @@ export class NfdApiClient {
     // Add cache parameter if needed
     const params = this._getCacheParam(options.nocache)
 
-    const response = await nfdSearchV2({
+    const response = await nfd_searchV2({
       client: this._client,
       query: {
         name: options.name,
@@ -231,7 +231,7 @@ export class NfdApiClient {
    * @returns Array of suggested NFD records
    */
   public async suggest(name: string, options: SuggestOptions): Promise<Nfd[]> {
-    const response = await nfdSuggest({
+    const response = await nfd_suggest({
       client: this._client,
       path: { name },
       query: {
@@ -257,7 +257,7 @@ export class NfdApiClient {
     sender: string,
     field: VerifyField,
   ): Promise<VerifyRequestResult> {
-    const response = await nfdVerifyRequest({
+    const response = await nfd_verifyRequest({
       client: this._client,
       body: {
         name,
@@ -280,7 +280,7 @@ export class NfdApiClient {
     id: string,
     challenge?: string,
   ): Promise<VerifyConfirmResult> {
-    const response = await nfdVerifyConfirm({
+    const response = await nfd_verifyConfirm({
       client: this._client,
       path: { id },
       body: {

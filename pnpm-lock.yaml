@@ -430,9 +430,6 @@ importers:
       '@algorandfoundation/algokit-utils':
         specifier: ^8.2.2
         version: 8.2.2(algosdk@3.7.0)
-      '@hey-api/client-fetch':
-        specifier: ^0.8.4
-        version: 0.8.4
     devDependencies:
       '@algorandfoundation/algokit-client-generator':
         specifier: ^4.0.9
@@ -978,10 +975,6 @@ packages:
 
   '@gerrit0/mini-shiki@1.27.2':
     resolution: {integrity: sha512-GeWyHz8ao2gBiUW4OJnQDxXQnFgZQwwQk05t/CVVgNBN7/rK8XZ7xY6YhLVv9tH3VppWWmr9DCl3MwemB/i+Og==}
-
-  '@hey-api/client-fetch@0.8.4':
-    resolution: {integrity: sha512-SWtUjVEFIUdiJGR2NiuF0njsSrSdTe7WHWkp3BLH3DEl2bRhiflOnBo29NSDdrY90hjtTQiTQkBxUgGOF29Xzg==}
-    deprecated: Starting with v0.73.0, this package is bundled directly inside @hey-api/openapi-ts.
 
   '@hey-api/codegen-core@0.9.1':
     resolution: {integrity: sha512-s97jL1dgTMuiMHv2BZ1X4Tgd99Mf9GOvGdNqNcGwIMmnR+PgYNoraj4Zvp134MKsNCap/m7k0r0vKKnl56pj4w==}
@@ -5596,8 +5589,6 @@ snapshots:
       '@shikijs/engine-oniguruma': 1.29.2
       '@shikijs/types': 1.29.2
       '@shikijs/vscode-textmate': 10.0.2
-
-  '@hey-api/client-fetch@0.8.4': {}
 
   '@hey-api/codegen-core@0.9.1(magicast@0.3.5)':
     dependencies:

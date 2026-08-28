@@ -34,5 +34,8 @@ coverage/
 Thumbs.db
 
 # Include spec files
-!src/openapi3.yaml
 !src/contracts/*.arc56.json
+
+# Fetched by `pnpm fetch:openapi` from the private nfd-backend repo, so it is
+# not reproducible from this repo alone and is not committed.
+packages/sdk/openapi3.yaml

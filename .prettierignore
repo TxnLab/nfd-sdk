@@ -10,6 +10,9 @@ build
 # Generated files
 pnpm-lock.yaml
 **/openapi3.yaml
+# The whole directory: openapi-ts emits its own fetch runtime into
+# src/api/client and src/api/core, and not every file there ends in .gen.ts.
+packages/sdk/src/api/
 **/*.gen.ts
 **/*.arc56.json
 **/contracts/*Client.ts
