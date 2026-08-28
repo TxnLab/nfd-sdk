@@ -3,7 +3,21 @@ export default {
   tagFormat: 'v${version}',
   pkgRoot: 'packages/sdk',
   plugins: [
-    '@semantic-release/commit-analyzer',
+    [
+      '@semantic-release/commit-analyzer',
+      {
+        preset: 'angular',
+        // Non-default. The Angular preset ships rules for feat, fix, perf and
+        // breaking changes only, so a refactor-only release cut nothing while
+        // the notes below still advertised a "Code Refactoring" section — one
+        // that could never appear on its own. These are additive: the preset's
+        // own rules still apply as the fallback.
+        releaseRules: [
+          { type: 'refactor', release: 'patch' },
+          { type: 'revert', release: 'patch' },
+        ],
+      },
+    ],
     [
       '@semantic-release/release-notes-generator',
       {
