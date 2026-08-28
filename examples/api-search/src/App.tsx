@@ -185,8 +185,7 @@ export function App(): JSX.Element {
   // Check if a value is selected in a group
   const isSelected = (group: string, value: string): boolean => {
     const values = searchParams[group as keyof typeof searchParams] as
-      | string[]
-      | undefined
+      string[] | undefined
     return values ? values.includes(value) : false
   }
 
